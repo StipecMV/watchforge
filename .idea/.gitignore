@@ -1,3 +1,10 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+/watchforge.iml
+/vcs.xml
+/modules.xml
+/misc.xml
+/markdown.xml
+/copilot.data.migration.agent.xml
+/caches/deviceStreaming.xml
