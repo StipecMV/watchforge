@@ -1,5 +1,3 @@
-using SharpOnvifClient;
-
 namespace WatchForge.NVR.Client.Core;
 
 /// <summary>

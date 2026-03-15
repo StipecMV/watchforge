@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace WatchForge.NVR.Client.Core.Tests;
 
 public class ServiceCollectionExtensionsTests

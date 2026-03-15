@@ -1,6 +1,3 @@
-using Moq;
-using SharpOnvifClient.Events;
-
 namespace WatchForge.NVR.Client.Core.Tests;
 
 public class EventServiceTests

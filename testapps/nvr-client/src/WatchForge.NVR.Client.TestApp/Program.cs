@@ -1,8 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using WatchForge.NVR.Client.Core;
-
 Console.WriteLine("🏭 WatchForge NVR Client Test App");
 Console.WriteLine("==================================");
 Console.WriteLine();

@@ -1,9 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using SharpOnvifClient;
-using SharpOnvifClient.DeviceMgmt;
-using SharpOnvifClient.Events;
-using SharpOnvifClient.Media;
-
 namespace WatchForge.NVR.Client.Core;
 
 /// <summary>
@@ -27,7 +21,7 @@ public sealed class OnvifClientAdapter : IOnvifClientAdapter
     public Task<GetServicesResponse> GetServicesAsync()
         => _client.GetServicesAsync();
 
-    public Task<global::System.DateTime> GetSystemDateAndTimeUtcAsync()
+    public Task<DateTime> GetSystemDateAndTimeUtcAsync()
         => _client.GetSystemDateAndTimeUtcAsync();
 
     public Task<GetProfilesResponse> GetProfilesAsync()

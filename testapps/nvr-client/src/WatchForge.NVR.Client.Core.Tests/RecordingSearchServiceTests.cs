@@ -1,6 +1,3 @@
-using Moq;
-using SharpOnvifClient.DeviceMgmt;
-
 namespace WatchForge.NVR.Client.Core.Tests;
 
 public class RecordingSearchServiceTests
@@ -20,8 +17,8 @@ public class RecordingSearchServiceTests
     [Test]
     public async Task SearchRecordingsAsync_ReturnsEmptyArray()
     {
-        var start = global::System.DateTime.UtcNow.AddHours(-1);
-        var end = global::System.DateTime.UtcNow;
+        var start = DateTime.UtcNow.AddHours(-1);
+        var end = DateTime.UtcNow;
 
         var result = await _sut.SearchRecordingsAsync(start, end);
 
@@ -31,8 +28,8 @@ public class RecordingSearchServiceTests
     [Test]
     public async Task SearchRecordingsAsync_WithToken_ReturnsEmptyArray()
     {
-        var start = global::System.DateTime.UtcNow.AddHours(-1);
-        var end = global::System.DateTime.UtcNow;
+        var start = DateTime.UtcNow.AddHours(-1);
+        var end = DateTime.UtcNow;
 
         var result = await _sut.SearchRecordingsAsync(start, end, "token123");
 

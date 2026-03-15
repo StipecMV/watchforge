@@ -1,6 +1,3 @@
-using Moq;
-using SharpOnvifClient.DeviceMgmt;
-
 namespace WatchForge.NVR.Client.Core.Tests;
 
 public class DeviceServiceTests
@@ -177,7 +174,7 @@ public class DeviceServiceTests
     [Test]
     public async Task GetSystemDateTimeAsync_Success_ReturnsDateTime()
     {
-        var expected = new global::System.DateTime(2024, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        var expected = new DateTime(2024, 6, 15, 12, 0, 0, DateTimeKind.Utc);
         _mockAdapter.Setup(x => x.GetSystemDateAndTimeUtcAsync())
             .ReturnsAsync(expected);
 

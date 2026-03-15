@@ -1,6 +1,3 @@
-using Moq;
-using SharpOnvifClient.Media;
-
 namespace WatchForge.NVR.Client.Core.Tests;
 
 public class MediaServiceTests

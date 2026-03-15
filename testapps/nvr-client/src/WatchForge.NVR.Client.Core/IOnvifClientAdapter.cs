@@ -1,7 +1,3 @@
-using SharpOnvifClient.DeviceMgmt;
-using SharpOnvifClient.Events;
-using SharpOnvifClient.Media;
-
 namespace WatchForge.NVR.Client.Core;
 
 /// <summary>
@@ -12,7 +8,7 @@ public interface IOnvifClientAdapter : IDisposable
 {
     Task<GetDeviceInformationResponse> GetDeviceInformationAsync();
     Task<GetServicesResponse> GetServicesAsync();
-    Task<global::System.DateTime> GetSystemDateAndTimeUtcAsync();
+    Task<DateTime> GetSystemDateAndTimeUtcAsync();
     Task<GetProfilesResponse> GetProfilesAsync();
     Task<MediaUri> GetStreamUriAsync(string profileToken);
 

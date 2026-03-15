@@ -98,7 +98,7 @@ public class ModelsTests
     [Test]
     public async Task MotionEvent_Constructor_SetsProperties()
     {
-        var timestamp = global::System.DateTime.UtcNow;
+        var timestamp = DateTime.UtcNow;
 
         var @event = new MotionEvent(
             Timestamp: timestamp,
