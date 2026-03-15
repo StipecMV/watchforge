@@ -1,5 +1,3 @@
-using SharpOnvifClient;
-
 namespace WatchForge.NVR.Client.Core;
 
 /// <summary>
@@ -8,10 +6,10 @@ namespace WatchForge.NVR.Client.Core;
 /// </summary>
 public class DeviceService : IDeviceService
 {
-    private readonly SimpleOnvifClient _client;
+    private readonly IOnvifClientAdapter _client;
     private readonly string _host;
 
-    public DeviceService(SimpleOnvifClient client, string host)
+    public DeviceService(IOnvifClientAdapter client, string host)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _host = host ?? throw new ArgumentNullException(nameof(host));

@@ -1,5 +1,3 @@
-using SharpOnvifClient;
-
 namespace WatchForge.NVR.Client.Core;
 
 /// <summary>
@@ -8,33 +6,25 @@ namespace WatchForge.NVR.Client.Core;
 /// </summary>
 public class RecordingSearchService : IRecordingSearchService
 {
-    private readonly SimpleOnvifClient _client;
+    private readonly IOnvifClientAdapter _client;
     private readonly string _host;
 
-    public RecordingSearchService(SimpleOnvifClient client, string host)
+    public RecordingSearchService(IOnvifClientAdapter client, string host)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _host = host ?? throw new ArgumentNullException(nameof(host));
     }
 
-    public async Task<IReadOnlyList<Recording>> SearchRecordingsAsync(
+    public Task<IReadOnlyList<Recording>> SearchRecordingsAsync(
         DateTime startTime,
         DateTime endTime,
         string? recordingToken = null,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            // Note: Recording search requires the RecordingControl service
-            // SharpOnvif SimpleOnvifClient doesn't expose recording search directly
-            // This is a placeholder - actual implementation would require low-level client
-            await Task.CompletedTask;
-            return Array.Empty<Recording>();
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            throw new OnvifConnectionException(_host, $"Failed to search recordings: {ex.Message}", ex);
-        }
+        // Note: Recording search requires the RecordingControl service
+        // SharpOnvif SimpleOnvifClient doesn't expose recording search directly
+        // This is a placeholder - actual implementation would require low-level client
+        return Task.FromResult<IReadOnlyList<Recording>>(Array.Empty<Recording>());
     }
 
     public async Task<bool> IsSearchSupportedAsync(CancellationToken cancellationToken = default)

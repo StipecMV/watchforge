@@ -21,16 +21,34 @@ public static class ServiceCollectionExtensions
         options.Validate();
 
         services.AddSingleton(options);
-        services.AddSingleton<SimpleOnvifClient>(sp =>
+
+        services.AddSingleton<IOnvifClientAdapter>(sp =>
         {
             var opts = sp.GetRequiredService<OnvifClientOptions>();
-            return new SimpleOnvifClient(opts.EndpointUrl, opts.Username, opts.Password);
+            return new OnvifClientAdapter(
+                new SimpleOnvifClient(opts.EndpointUrl, opts.Username, opts.Password));
         });
 
-        services.AddSingleton<IDeviceService, DeviceService>();
-        services.AddSingleton<IMediaService, MediaService>();
-        services.AddSingleton<IRecordingSearchService, RecordingSearchService>();
-        services.AddSingleton<IEventService, EventService>();
+        services.AddSingleton<IDeviceService>(sp =>
+            new DeviceService(
+                sp.GetRequiredService<IOnvifClientAdapter>(),
+                sp.GetRequiredService<OnvifClientOptions>().Host));
+
+        services.AddSingleton<IMediaService>(sp =>
+            new MediaService(
+                sp.GetRequiredService<IOnvifClientAdapter>(),
+                sp.GetRequiredService<OnvifClientOptions>().Host));
+
+        services.AddSingleton<IRecordingSearchService>(sp =>
+            new RecordingSearchService(
+                sp.GetRequiredService<IOnvifClientAdapter>(),
+                sp.GetRequiredService<OnvifClientOptions>().Host));
+
+        services.AddSingleton<IEventService>(sp =>
+            new EventService(
+                sp.GetRequiredService<IOnvifClientAdapter>(),
+                sp.GetRequiredService<OnvifClientOptions>().Host));
+
         services.AddSingleton<IOnvifClient, OnvifClient>();
 
         return services;
@@ -48,7 +66,7 @@ public static class ServiceCollectionExtensions
 
         var options = new OnvifClientOptions();
         configureOptions(options);
-        
+
         return services.AddWatchForgeNvrClient(options);
     }
 }

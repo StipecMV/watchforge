@@ -9,11 +9,11 @@ namespace WatchForge.NVR.Client.Core;
 /// </summary>
 public class EventService : IEventService
 {
-    private readonly SimpleOnvifClient _client;
+    private readonly IOnvifClientAdapter _client;
     private readonly string _host;
     private readonly Dictionary<string, string> _subscriptions = new();
 
-    public EventService(SimpleOnvifClient client, string host)
+    public EventService(IOnvifClientAdapter client, string host)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _host = host ?? throw new ArgumentNullException(nameof(host));
@@ -23,12 +23,10 @@ public class EventService : IEventService
     {
         try
         {
-            // Using the library API: initial termination time in seconds is required (e.g., 300s)
-            var subscription = await _client.PullPointSubscribeAsync(300);
-            var subscriptionAddress = subscription.SubscriptionReference?.Address?.ToString();
+            var subscriptionAddress = await _client.PullPointSubscribeAsync(300);
             if (string.IsNullOrWhiteSpace(subscriptionAddress))
             {
-                throw new OnvifConnectionException(_host, "Failed to obtain pull point subscription address.", null);
+                throw new OnvifConnectionException(_host, "Failed to obtain pull point subscription address.");
             }
 
             var subscriptionReference = Guid.NewGuid().ToString("N");
@@ -61,17 +59,14 @@ public class EventService : IEventService
 
             var motionEvents = new List<MotionEvent>();
 
-            // PullMessagesResponse contains NotificationMessage array
             var notificationMessages = response.NotificationMessage ?? Array.Empty<NotificationMessageHolderType>();
 
             foreach (var notification in notificationMessages)
             {
-                // Not all fields might be available in every message; keep defaults.
                 bool isMotion = false;
                 try
                 {
-                    // Some versions may include OnvifEvents helper
-                    isMotion = OnvifEvents.IsMotionDetected(notification) ?? false;
+                    isMotion = TryGetIsMotionDetected(notification) ?? false;
                 }
                 catch
                 {
@@ -111,13 +106,14 @@ public class EventService : IEventService
         }
     }
 
+    protected virtual bool? TryGetIsMotionDetected(NotificationMessageHolderType notification)
+        => OnvifEvents.IsMotionDetected(notification);
+
     public async Task<bool> IsPullPointSupportedAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            // Try to create a subscription and immediately unsubscribe
-            var subscription = await _client.PullPointSubscribeAsync(300);
-            var address = subscription.SubscriptionReference?.Address?.ToString();
+            var address = await _client.PullPointSubscribeAsync(300);
             if (!string.IsNullOrEmpty(address))
             {
                 await _client.PullPointUnsubscribeAsync(address);

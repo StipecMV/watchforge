@@ -2,4 +2,5 @@
 <Solution>
   <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.Core/WatchForge.NVR.Client.Core.csproj" />
   <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
+  <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.Core.Tests/WatchForge.NVR.Client.Core.Tests.csproj" />
 </Solution>

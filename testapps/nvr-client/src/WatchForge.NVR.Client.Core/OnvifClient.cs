@@ -9,36 +9,44 @@ namespace WatchForge.NVR.Client.Core;
 /// </summary>
 public class OnvifClient : IOnvifClient
 {
-    private readonly SimpleOnvifClient _innerClient;
+    private readonly IOnvifClientAdapter? _adapter;
     private bool _disposed;
 
     public OnvifClient(OnvifClientOptions options)
     {
         options.Validate();
-        
+
         Options = options;
         Host = options.Host;
-        _innerClient = new SimpleOnvifClient(options.EndpointUrl, options.Username, options.Password);
-        
-        // Initialize services (Dependency Injection)
-        Device = new DeviceService(_innerClient, Host);
-        Media = new MediaService(_innerClient, Host);
-        
-        // Optional services - may be null if not supported
-        RecordingSearch = new RecordingSearchService(_innerClient, Host);
-        Events = new EventService(_innerClient, Host);
+        _adapter = new OnvifClientAdapter(
+            new SimpleOnvifClient(options.EndpointUrl, options.Username, options.Password));
+
+        Device = new DeviceService(_adapter, Host);
+        Media = new MediaService(_adapter, Host);
+        RecordingSearch = new RecordingSearchService(_adapter, Host);
+        Events = new EventService(_adapter, Host);
+    }
+
+    internal OnvifClient(OnvifClientOptions options, IDeviceService device)
+    {
+        Options = options;
+        Host = options.Host;
+        Device = device;
+        Media = null!;
+        RecordingSearch = null;
+        Events = null;
     }
 
     public OnvifClientOptions Options { get; }
-    
+
     public string Host { get; }
-    
+
     public IDeviceService Device { get; }
-    
+
     public IMediaService Media { get; }
-    
+
     public IRecordingSearchService? RecordingSearch { get; }
-    
+
     public IEventService? Events { get; }
 
     public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)
@@ -63,12 +71,12 @@ public class OnvifClient : IOnvifClient
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed) return;
-        
+
         if (disposing)
         {
-            _innerClient?.Dispose();
+            _adapter?.Dispose();
         }
-        
+
         _disposed = true;
     }
 
