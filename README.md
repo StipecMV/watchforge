@@ -13,11 +13,9 @@ watchforge/
 ├── WatchForge.slnx              # Main .NET solution file
 ├── testapps/                    # Test applications
 │   └── nvr-client/              # .NET NVR Client for ONVIF devices
-│       ├── src/
-│       │   ├── WatchForge.NVR.Client.Core/
-│       │   └── WatchForge.NVR.Client.TestApp/
-│       └── tests/
-│           └── WatchForge.NVR.Client.TestApp.Tests/
+│       └── src/
+│           ├── WatchForge.NVR.Client.Core/
+│           └── WatchForge.NVR.Client.TestApp/
 ├── client/                      # Frontend client application
 ├── db/
 │   └── queries/                 # Database schema and queries
@@ -30,8 +28,9 @@ watchforge/
 - 📹 ONVIF Client - Full ONVIF protocol support
 - 🔧 SharpOnvif - Uses actively maintained SharpOnvif library
 - 🏗️ SOLID Architecture - Clean code with dependency injection
-- 🖥️ Cross-platform - Windows, macOS, Linux (x64, ARM64)
-- ✅ 100% Test Coverage - Comprehensive unit tests with NUnit + TUnit
+- 🖥️ Cross-platform - .NET 10 supported on Windows, macOS, Linux (x64/arm64 and other supported runtimes)
+- 🧪 Test project not included in this repository version (no `tests/` folder or `WatchForge.NVR.Client.TestApp.Tests` present)
+- ✅ Codelab coverage recommendation: add CI test suite if required for your fork
 
 ## 🛠️ Tech Stack
 
@@ -47,7 +46,7 @@ watchforge/
 
 #### For .NET Components
 - .NET 10 SDK
-- Linux ARM64 (Raspberry Pi) or Linux x64 (desktop)
+- Any .NET 10 runtime platform (Windows, macOS, Linux x64/arm64)
 
 ### Clone the Repository
 
@@ -58,84 +57,22 @@ cd watchforge
 
 ### NVR Client Quick Start
 
-See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for detailed instructions.
+See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for:
+- Installation and configuration
+- Build instructions (all platforms)
+- Run and test commands
+- Publishing options
 
-```bash
-cd testapps/nvr-client
+## � NVR Client details
 
-# Build for current platform
-dotnet build
+For full architecture, run instructions, tests, and environment variable docs see:
 
-# Run the test application
-dotnet run --project src/WatchForge.NVR.Client.TestApp
+- [testapps/nvr-client/README.md](testapps/nvr-client/README.md)
 
-# Run tests
-dotnet test
-```
+## � Architecture
 
-### Build for Raspberry Pi
+See [testapps/nvr-client/README.md](testapps/nvr-client/README.md#-architecture) for the detailed architecture diagram.
 
-```bash
-cd testapps/nvr-client
+## �📝 License
 
-# Publish for ARM64
-dotnet publish -c Release -r linux-arm64 --self-contained
-```
-
-## 📊 Architecture
-
-### NVR Client Architecture
-
-```mermaid
-graph TD
-    A[Program.cs Main] --> B[Host.CreateDefaultBuilder]
-    B --> C[IServiceCollection DI Container]
-    C --> D[IOnvifClient]
-    D --> E[DeviceService]
-    D --> F[MediaService]
-    D --> G[RecordingSearchService]
-    D --> H[EventService]
-    C --> I[SharpOnvifClient.SimpleOnvifClient]
-    I --> J[Low-level ONVIF Communication]
-```
-
-## 🧪 Testing
-
-```bash
-# Run NVR Client tests
-cd testapps/nvr-client
-dotnet test
-
-# Run with code coverage
-dotnet test /p:CollectCoverage=true
-
-# Run with 100% threshold
-dotnet test /p:CollectCoverage=true /p:Threshold=100
-```
-
-## 🔌 Environment Variables
-
-NVR Client configuration can be overridden using environment variables:
-
-```bash
-export Onvif__Host=192.168.68.58
-export Onvif__Port=8080
-export Onvif__Username=your_username
-export Onvif__Password=your_password
-```
-
-## 🏗️ SOLID Principles
-
-The NVR Client project implements SOLID principles:
-
-| Principle | Implementation |
-|-----------|----------------|
-| **S** - Single Responsibility | Each service has one responsibility |
-| **O** - Open/Closed | Extension via new interface implementations |
-| **L** - Liskov Substitution | All services implement their interfaces |
-| **I** - Interface Segregation | Multiple small, focused interfaces |
-| **D** - Dependency Inversion | Dependency injection via IServiceCollection |
-
-## 📝 License
-
-WatchForge is an open-source project. See the LICENSE file for details.
+WatchForge is an open-source project. See the [LICENSE](LICENSE) file for details.
