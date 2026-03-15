@@ -1,0 +1,6 @@
+.vscode/settings.json
+
+# Ignore C# build output
+**/bin/
+**/obj/
+
