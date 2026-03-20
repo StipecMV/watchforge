@@ -6,3 +6,4 @@
 
 global.json
 .claude/settings.json
+TestResults/*.html
