@@ -31,12 +31,12 @@ var client = host.Services.GetRequiredService<IOnvifClient>();
 
 try
 {
-    Console.WriteLine($"🔌 Pripájam sa k {client.Host}...");
+    Console.WriteLine($"🔌 Connecting to {client.Host}...");
     Console.WriteLine();
 
     // 1️⃣ Test connection & get device info
     var deviceInfo = await client.Device.GetDeviceInformationAsync();
-    Console.WriteLine($"✅ Pripojenie OK!");
+    Console.WriteLine($"✅ Connection OK!");
     Console.WriteLine($"   Manufacturer: {deviceInfo.Manufacturer}");
     Console.WriteLine($"   Model: {deviceInfo.Model}");
     Console.WriteLine($"   Firmware: {deviceInfo.FirmwareVersion}");
@@ -46,7 +46,7 @@ try
 
     // 2️⃣ Get available services
     var services = await client.Device.GetServicesAsync();
-    Console.WriteLine($"📡 Dostupné ONVIF služby ({services.Count}):");
+    Console.WriteLine($"📡 Available ONVIF services ({services.Count}):");
     foreach (var svc in services)
     {
         var icon = svc.Namespace.Contains("media", StringComparison.OrdinalIgnoreCase) ? "📹" :
@@ -59,7 +59,7 @@ try
 
     // 3️⃣ Get media profiles
     var profiles = await client.Media.GetProfilesAsync();
-    Console.WriteLine($"📹 Nájdených {profiles.Count} profilov:");
+    Console.WriteLine($"📹 Found {profiles.Count} profile(s):");
     foreach (var profile in profiles)
     {
         var fixedIcon = profile.IsFixed == true ? "🔒" : "📌";
@@ -75,39 +75,39 @@ try
             firstProfile.Token,
             StreamType.RTPUnicast,
             TransportProtocol.RTSP);
-        
-        Console.WriteLine($"🔗 RTSP URL (pre '{firstProfile.Name}'):");
+
+        Console.WriteLine($"🔗 RTSP URL (for '{firstProfile.Name}'):");
         Console.WriteLine($"   {streamUri.Uri}");
         Console.WriteLine();
     }
 
     // 5️⃣ Check recording search support
-    Console.WriteLine("🔍 Kontrolujem RecordingSearch...");
+    Console.WriteLine("🔍 Checking RecordingSearch...");
     if (client.RecordingSearch != null)
     {
         var isSupported = await client.RecordingSearch.IsSearchSupportedAsync();
         if (isSupported)
         {
-            Console.WriteLine("   ✅ RecordingSearch je podporovaný!");
+            Console.WriteLine("   ✅ RecordingSearch is supported!");
         }
         else
         {
-            Console.WriteLine("   ⚠️ RecordingSearch nie je dostupný");
-            Console.WriteLine("      → Použi RTSP + časový filter na stiahnutie");
+            Console.WriteLine("   ⚠️ RecordingSearch is not available");
+            Console.WriteLine("      → Use RTSP + time filter to retrieve recordings");
         }
     }
     else
     {
-        Console.WriteLine("   ⚠️ RecordingSearch service nie je inicializovaný");
+        Console.WriteLine("   ⚠️ RecordingSearch service is not initialized");
     }
     Console.WriteLine();
 
     Console.WriteLine("==================================");
-    Console.WriteLine("✅ Hotovo!");
+    Console.WriteLine("✅ Done!");
 }
 catch (OnvifConnectionException ex)
 {
-    Console.WriteLine($"❌ Chyba pripojenia: {ex.Message}");
+    Console.WriteLine($"❌ Connection error: {ex.Message}");
     Console.WriteLine($"   Host: {ex.Host}");
     if (ex.InnerException != null)
     {
@@ -117,18 +117,18 @@ catch (OnvifConnectionException ex)
 }
 catch (OnvifAuthenticationException ex)
 {
-    Console.WriteLine($"❌ Chyba autentifikácie: {ex.Message}");
+    Console.WriteLine($"❌ Authentication error: {ex.Message}");
     Console.WriteLine($"   Username: {ex.Username}");
     Environment.Exit(2);
 }
 catch (OnvifServiceNotAvailableException ex)
 {
-    Console.WriteLine($"⚠️ Služba nie je dostupná: {ex.Message}");
+    Console.WriteLine($"⚠️ Service not available: {ex.Message}");
     Environment.Exit(3);
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ Neočakávaná chyba: {ex.Message}");
+    Console.WriteLine($"❌ Unexpected error: {ex.Message}");
     Console.WriteLine($"   Type: {ex.GetType().Name}");
     if (ex.InnerException != null)
     {

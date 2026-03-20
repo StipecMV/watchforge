@@ -41,7 +41,7 @@ public class ModelsTests
 
         await Assert.That(profile.Token).IsEqualTo("token1");
         await Assert.That(profile.Name).IsEqualTo("Profile1");
-        await Assert.That(profile.IsFixed).IsEqualTo(true);
+        await Assert.That(profile.IsFixed).IsTrue();
     }
 
     [Test]
@@ -115,17 +115,17 @@ public class ModelsTests
     [Test]
     public async Task StreamType_Enum_HasCorrectValues()
     {
-        await Assert.That(StreamType.RTPUnicast).IsEqualTo((StreamType)0);
-        await Assert.That(StreamType.RTPMulticast).IsEqualTo((StreamType)1);
+        await Assert.That((int)StreamType.RTPUnicast).IsEqualTo(0);
+        await Assert.That((int)StreamType.RTPMulticast).IsEqualTo(1);
     }
 
     [Test]
     public async Task TransportProtocol_Enum_HasCorrectValues()
     {
-        await Assert.That(TransportProtocol.RTSP).IsEqualTo((TransportProtocol)0);
-        await Assert.That(TransportProtocol.RTP).IsEqualTo((TransportProtocol)1);
-        await Assert.That(TransportProtocol.UDP).IsEqualTo((TransportProtocol)2);
-        await Assert.That(TransportProtocol.TCP).IsEqualTo((TransportProtocol)3);
+        await Assert.That((int)TransportProtocol.RTSP).IsEqualTo(0);
+        await Assert.That((int)TransportProtocol.RTP).IsEqualTo(1);
+        await Assert.That((int)TransportProtocol.UDP).IsEqualTo(2);
+        await Assert.That((int)TransportProtocol.TCP).IsEqualTo(3);
     }
 
     [Test]

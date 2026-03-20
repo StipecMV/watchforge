@@ -85,7 +85,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Host is required");
+        await Assert.That(ex!.Message).Contains("Host is required");
     }
 
     [Test]
@@ -101,7 +101,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Host is required");
+        await Assert.That(ex!.Message).Contains("Host is required");
     }
 
     [Test]
@@ -117,7 +117,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Username is required");
+        await Assert.That(ex!.Message).Contains("Username is required");
     }
 
     [Test]
@@ -133,7 +133,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Password is required");
+        await Assert.That(ex!.Message).Contains("Password is required");
     }
 
     [Test]
@@ -149,7 +149,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Port must be between 1 and 65535");
+        await Assert.That(ex!.Message).Contains("Port must be between 1 and 65535");
     }
 
     [Test]
@@ -165,7 +165,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Port must be between 1 and 65535");
+        await Assert.That(ex!.Message).Contains("Port must be between 1 and 65535");
     }
 
     [Test]
@@ -181,7 +181,7 @@ public class OnvifClientOptionsTests
 
         var ex = await Assert.That(() => options.Validate())
             .Throws<InvalidOperationException>();
-        await Assert.That(ex.Message).Contains("Port must be between 1 and 65535");
+        await Assert.That(ex!.Message).Contains("Port must be between 1 and 65535");
     }
 
     [Test]
@@ -195,6 +195,74 @@ public class OnvifClientOptionsTests
             Port = port,
             Username = "admin",
             Password = "password"
+        };
+
+        await Assert.That(() => options.Validate()).ThrowsNothing();
+    }
+
+    [Test]
+    public async Task Validate_WithZeroTimeout_ThrowsInvalidOperationException()
+    {
+        var options = new OnvifClientOptions
+        {
+            Host = "192.168.1.1",
+            Port = 80,
+            Username = "admin",
+            Password = "password",
+            TimeoutSeconds = 0
+        };
+
+        var ex = await Assert.That(() => options.Validate())
+            .Throws<InvalidOperationException>();
+        await Assert.That(ex!.Message).Contains("TimeoutSeconds must be between 1 and 300");
+    }
+
+    [Test]
+    public async Task Validate_WithNegativeTimeout_ThrowsInvalidOperationException()
+    {
+        var options = new OnvifClientOptions
+        {
+            Host = "192.168.1.1",
+            Port = 80,
+            Username = "admin",
+            Password = "password",
+            TimeoutSeconds = -5
+        };
+
+        var ex = await Assert.That(() => options.Validate())
+            .Throws<InvalidOperationException>();
+        await Assert.That(ex!.Message).Contains("TimeoutSeconds must be between 1 and 300");
+    }
+
+    [Test]
+    public async Task Validate_WithTimeoutAboveMaximum_ThrowsInvalidOperationException()
+    {
+        var options = new OnvifClientOptions
+        {
+            Host = "192.168.1.1",
+            Port = 80,
+            Username = "admin",
+            Password = "password",
+            TimeoutSeconds = 301
+        };
+
+        var ex = await Assert.That(() => options.Validate())
+            .Throws<InvalidOperationException>();
+        await Assert.That(ex!.Message).Contains("TimeoutSeconds must be between 1 and 300");
+    }
+
+    [Test]
+    [Arguments(1)]
+    [Arguments(300)]
+    public async Task Validate_WithBoundaryTimeout_DoesNotThrow(int timeoutSeconds)
+    {
+        var options = new OnvifClientOptions
+        {
+            Host = "192.168.1.1",
+            Port = 80,
+            Username = "admin",
+            Password = "password",
+            TimeoutSeconds = timeoutSeconds
         };
 
         await Assert.That(() => options.Validate()).ThrowsNothing();

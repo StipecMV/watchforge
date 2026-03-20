@@ -32,9 +32,9 @@ public class MediaServiceTests
         await Assert.That(result.Count).IsEqualTo(2);
         await Assert.That(result[0].Token).IsEqualTo("profile1");
         await Assert.That(result[0].Name).IsEqualTo("Main");
-        await Assert.That(result[0].IsFixed).IsEqualTo(false);
+        await Assert.That(result[0].IsFixed).IsFalse();
         await Assert.That(result[1].Token).IsEqualTo("profile2");
-        await Assert.That(result[1].IsFixed).IsEqualTo(true);
+        await Assert.That(result[1].IsFixed).IsTrue();
     }
 
     [Test]
@@ -163,10 +163,37 @@ public class MediaServiceTests
     // ── GetVideoSourcesAsync ───────────────────────────────────────────
 
     [Test]
-    public async Task GetVideoSourcesAsync_ReturnsEmptyArray()
+    public async Task GetVideoSourcesAsync_ThrowsNotSupportedException()
     {
-        var result = await _sut.GetVideoSourcesAsync();
+        await Assert.That(async () => await _sut.GetVideoSourcesAsync())
+            .Throws<NotSupportedException>();
+    }
 
-        await Assert.That(result.Count).IsEqualTo(0);
+    // ── CancellationToken propagation ──────────────────────────────────
+
+    [Test]
+    public async Task GetProfilesAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        _mockAdapter.Setup(x => x.GetProfilesAsync())
+            .ReturnsAsync(new GetProfilesResponse { Profiles = [] });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.That(async () => await _sut.GetProfilesAsync(cts.Token))
+            .Throws<OperationCanceledException>();
+    }
+
+    [Test]
+    public async Task GetStreamUriAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        _mockAdapter.Setup(x => x.GetStreamUriAsync(It.IsAny<string>()))
+            .ReturnsAsync(new MediaUri { Uri = "rtsp://host/stream" });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.That(async () => await _sut.GetStreamUriAsync("profile1", cancellationToken: cts.Token))
+            .Throws<OperationCanceledException>();
     }
 }

@@ -8,17 +8,16 @@ WatchForge NVR Client is a .NET 10 console application for connecting to ONVIF-c
 - **SharpOnvif** - Uses actively maintained SharpOnvif library
 - **SOLID Architecture** - Clean code with dependency injection
 - **Cross-platform** - Windows, macOS, Linux (x64, ARM64)
-- **100% Test Coverage** - Comprehensive unit tests with NUnit + TUnit
+- **Unit Tests** - Full service-layer coverage with TUnit + Moq
 
 ## 📁 Project Structure
 
 ```
 testapps/nvr-client/
-├── src/
-│   ├── WatchForge.NVR.Client.Core/    # Core with ONVIF implementation
-│   └── WatchForge.NVR.Client.TestApp/ # Console application
-└── tests/
-    └── WatchForge.NVR.Client.TestApp.Tests/  # Unit tests
+└── src/
+    ├── WatchForge.NVR.Client.Core/        # ONVIF client library
+    ├── WatchForge.NVR.Client.Core.Tests/  # Unit tests (TUnit + Moq)
+    └── WatchForge.NVR.Client.TestApp/     # Console test application
 ```
 
 Projects are managed from the root `WatchForge.slnx` solution file.
@@ -104,14 +103,16 @@ dotnet run --project src/WatchForge.NVR.Client.TestApp
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-dotnet test
+# Run all tests (from repo root)
+dotnet test --solution WatchForge.slnx
 
-# Run with code coverage
-dotnet test /p:CollectCoverage=true
+# Run only NVR client tests
+dotnet test src/WatchForge.NVR.Client.Core.Tests/
 
-# Run with 100% threshold
-dotnet test /p:CollectCoverage=true /p:Threshold=100
+# Run with code coverage (from repo root)
+dotnet-coverage collect \
+  "dotnet test --solution WatchForge.slnx" \
+  -f xml -o coverage.xml
 ```
 
 ## 📦 Publishing as Single File

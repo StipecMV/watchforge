@@ -192,6 +192,21 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
+    public async Task AddWatchForgeNvrClient_IOnvifClientDevice_IsSameInstanceAs_IDeviceService()
+    {
+        // Verifies the DI graph is unified — IOnvifClient.Device must be the same
+        // singleton that is also registered as IDeviceService, not a second copy.
+        var services = new ServiceCollection();
+        services.AddWatchForgeNvrClient(ValidOptions());
+        var provider = services.BuildServiceProvider();
+
+        var client        = provider.GetRequiredService<IOnvifClient>();
+        var deviceService = provider.GetRequiredService<IDeviceService>();
+
+        await Assert.That(client.Device).IsSameReferenceAs(deviceService);
+    }
+
+    [Test]
     public async Task AddWatchForgeNvrClient_WithConfigureAction_AppliesAllOptions()
     {
         var services = new ServiceCollection();

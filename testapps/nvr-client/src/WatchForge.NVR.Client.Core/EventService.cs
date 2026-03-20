@@ -8,7 +8,7 @@ public class EventService : IEventService
 {
     private readonly IOnvifClientAdapter _client;
     private readonly string _host;
-    private readonly Dictionary<string, string> _subscriptions = new();
+    private readonly ConcurrentDictionary<string, string> _subscriptions = new();
 
     public EventService(IOnvifClientAdapter client, string host)
     {
@@ -20,7 +20,7 @@ public class EventService : IEventService
     {
         try
         {
-            var subscriptionAddress = await _client.PullPointSubscribeAsync(300);
+            var subscriptionAddress = await _client.PullPointSubscribeAsync(300).WaitAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(subscriptionAddress))
             {
                 throw new OnvifConnectionException(_host, "Failed to obtain pull point subscription address.");
@@ -42,7 +42,7 @@ public class EventService : IEventService
         int messageLimit = 10,
         CancellationToken cancellationToken = default)
     {
-        if (!_subscriptions.ContainsKey(subscriptionReference))
+        if (!_subscriptions.TryGetValue(subscriptionReference, out var subscriptionAddress))
         {
             throw new InvalidOperationException($"Subscription '{subscriptionReference}' not found. Call SubscribeToPullPointAsync first.");
         }
@@ -50,9 +50,9 @@ public class EventService : IEventService
         try
         {
             var response = await _client.PullPointPullMessagesAsync(
-                _subscriptions[subscriptionReference],
+                subscriptionAddress,
                 timeoutSeconds,
-                messageLimit);
+                messageLimit).WaitAsync(cancellationToken).ConfigureAwait(false);
 
             var motionEvents = new List<MotionEvent>();
 
@@ -87,15 +87,15 @@ public class EventService : IEventService
 
     public async Task UnsubscribeAsync(string subscriptionReference, CancellationToken cancellationToken = default)
     {
-        if (!_subscriptions.ContainsKey(subscriptionReference))
+        if (!_subscriptions.TryGetValue(subscriptionReference, out var addressToRemove))
         {
             return;
         }
 
         try
         {
-            await _client.PullPointUnsubscribeAsync(_subscriptions[subscriptionReference]);
-            _subscriptions.Remove(subscriptionReference);
+            await _client.PullPointUnsubscribeAsync(addressToRemove).WaitAsync(cancellationToken).ConfigureAwait(false);
+            _subscriptions.TryRemove(subscriptionReference, out _);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -110,13 +110,17 @@ public class EventService : IEventService
     {
         try
         {
-            var address = await _client.PullPointSubscribeAsync(300);
+            var address = await _client.PullPointSubscribeAsync(300).WaitAsync(cancellationToken).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(address))
             {
-                await _client.PullPointUnsubscribeAsync(address);
+                await _client.PullPointUnsubscribeAsync(address).WaitAsync(cancellationToken).ConfigureAwait(false);
                 return true;
             }
             return false;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch
         {

@@ -21,10 +21,10 @@ public class RecordingSearchService : IRecordingSearchService
         string? recordingToken = null,
         CancellationToken cancellationToken = default)
     {
-        // Note: Recording search requires the RecordingControl service
-        // SharpOnvif SimpleOnvifClient doesn't expose recording search directly
-        // This is a placeholder - actual implementation would require low-level client
-        return Task.FromResult<IReadOnlyList<Recording>>(Array.Empty<Recording>());
+        // SharpOnvif SimpleOnvifClient does not expose recording search.
+        throw new NotSupportedException(
+            "Recording search is not supported by the SharpOnvif backend. " +
+            "Use IsSearchSupportedAsync() to check capability before calling this method.");
     }
 
     public async Task<bool> IsSearchSupportedAsync(CancellationToken cancellationToken = default)
@@ -32,8 +32,8 @@ public class RecordingSearchService : IRecordingSearchService
         try
         {
             // Check if the RecordingControl service is available
-            var services = await _client.GetServicesAsync();
-            return services.Service?.Any(s => 
+            var services = await _client.GetServicesAsync().ConfigureAwait(false);
+            return services.Service?.Any(s =>
                 s.Namespace?.Contains("recording", StringComparison.OrdinalIgnoreCase) == true
             ) ?? false;
         }

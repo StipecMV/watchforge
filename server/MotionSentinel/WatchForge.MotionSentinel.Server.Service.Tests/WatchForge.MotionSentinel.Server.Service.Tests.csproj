@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <RootNamespace>WatchForge.MotionSentinel.Server.Service.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" Version="1.19.74" />
+    <PackageReference Include="TUnit.Assertions" Version="1.19.74" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.5" />
+    <PackageReference Include="coverlet.collector" Version="8.0.1" />
+    <PackageReference Include="coverlet.msbuild" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WatchForge.MotionSentinel.Server.Core\WatchForge.MotionSentinel.Server.Core.csproj" />
+    <ProjectReference Include="..\WatchForge.MotionSentinel.Server.Service\WatchForge.MotionSentinel.Server.Service.csproj" />
+  </ItemGroup>
+
+</Project>

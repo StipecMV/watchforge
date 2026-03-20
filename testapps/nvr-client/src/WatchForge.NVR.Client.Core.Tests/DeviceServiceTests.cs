@@ -192,4 +192,45 @@ public class DeviceServiceTests
         await Assert.That(async () => await _sut.GetSystemDateTimeAsync())
             .Throws<OnvifConnectionException>();
     }
+
+    // ── CancellationToken propagation ──────────────────────────────────
+
+    [Test]
+    public async Task GetDeviceInformationAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        _mockAdapter.Setup(x => x.GetDeviceInformationAsync())
+            .ReturnsAsync(new GetDeviceInformationResponse { Manufacturer = "X", Model = "Y", FirmwareVersion = "Z" });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.That(async () => await _sut.GetDeviceInformationAsync(cts.Token))
+            .Throws<OperationCanceledException>();
+    }
+
+    [Test]
+    public async Task GetServicesAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        _mockAdapter.Setup(x => x.GetServicesAsync())
+            .ReturnsAsync(new GetServicesResponse { Service = [] });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.That(async () => await _sut.GetServicesAsync(cts.Token))
+            .Throws<OperationCanceledException>();
+    }
+
+    [Test]
+    public async Task GetSystemDateTimeAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        _mockAdapter.Setup(x => x.GetSystemDateAndTimeUtcAsync())
+            .ReturnsAsync(DateTime.UtcNow);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.That(async () => await _sut.GetSystemDateTimeAsync(cts.Token))
+            .Throws<OperationCanceledException>();
+    }
 }

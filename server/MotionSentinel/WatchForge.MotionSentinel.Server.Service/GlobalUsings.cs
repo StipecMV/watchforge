@@ -1,0 +1,13 @@
+global using log4net;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.Extensions.Options;
+global using OpenCvSharp;
+global using System.Collections.Concurrent;
+global using WatchForge.MotionSentinel.Server.Core.Models;
+global using WatchForge.MotionSentinel.Server.Core.Output;
+global using WatchForge.MotionSentinel.Server.Core.Services;
+global using WatchForge.MotionSentinel.Server.Service.Detection;
+global using WatchForge.MotionSentinel.Server.Service.FileAccess;
+global using WatchForge.MotionSentinel.Server.Service.Infrastructure.Logging;
+global using WatchForge.MotionSentinel.Server.Service.Infrastructure.Wrappers;
+global using WatchForge.MotionSentinel.Server.Service.VideoSources;

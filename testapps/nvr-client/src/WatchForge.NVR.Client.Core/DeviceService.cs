@@ -17,9 +17,11 @@ public class DeviceService : IDeviceService
 
     public async Task<DeviceInformation> GetDeviceInformationAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            var response = await _client.GetDeviceInformationAsync();
+            var response = await _client.GetDeviceInformationAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
             return new DeviceInformation(
                 Manufacturer: response.Manufacturer ?? "Unknown",
                 Model: response.Model ?? "Unknown",
@@ -36,11 +38,13 @@ public class DeviceService : IDeviceService
 
     public async Task<IReadOnlyList<OnvifService>> GetServicesAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            var response = await _client.GetServicesAsync();
+            var response = await _client.GetServicesAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
             var services = new List<OnvifService>();
-            
+
             if (response.Service != null)
             {
                 foreach (var s in response.Service)
@@ -52,7 +56,7 @@ public class DeviceService : IDeviceService
                     ));
                 }
             }
-            
+
             return services.AsReadOnly();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -63,15 +67,17 @@ public class DeviceService : IDeviceService
 
     public async Task<bool> HasServiceAsync(string serviceNamespace, CancellationToken cancellationToken = default)
     {
-        var services = await GetServicesAsync(cancellationToken);
+        var services = await GetServicesAsync(cancellationToken).ConfigureAwait(false);
         return services.Any(s => s.Namespace.Equals(serviceNamespace, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<DateTime> GetSystemDateTimeAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            return await _client.GetSystemDateAndTimeUtcAsync();
+            return await _client.GetSystemDateAndTimeUtcAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

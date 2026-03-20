@@ -33,10 +33,31 @@ public class OnvifClientFactoryTests
     }
 
     [Test]
-    public async Task Constructor_WithNullOptions_ThrowsNullReferenceException()
+    public async Task Constructor_WithNullOptions_ThrowsArgumentNullException()
     {
         await Assert.That(() => new OnvifClient(null!))
-            .Throws<NullReferenceException>();
+            .Throws<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task InternalConstructor_WithNullDevice_ThrowsArgumentNullException()
+    {
+        await Assert.That(() => new OnvifClient(ValidOptions(), null!,
+                new Mock<IMediaService>().Object,
+                new Mock<IRecordingSearchService>().Object,
+                new Mock<IEventService>().Object))
+            .Throws<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task InternalConstructor_WithNullOptions_ThrowsArgumentNullException()
+    {
+        await Assert.That(() => new OnvifClient(null!,
+                new Mock<IDeviceService>().Object,
+                new Mock<IMediaService>().Object,
+                new Mock<IRecordingSearchService>().Object,
+                new Mock<IEventService>().Object))
+            .Throws<ArgumentNullException>();
     }
 
     [Test]
@@ -107,7 +128,10 @@ public class OnvifClientFactoryTests
         var mockDevice = new Mock<IDeviceService>();
         mockDevice.Setup(d => d.GetDeviceInformationAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DeviceInformation("Hikvision", "DS-2CD", "1.0", null, null));
-        using var client = new OnvifClient(ValidOptions(), mockDevice.Object);
+        using var client = new OnvifClient(ValidOptions(), mockDevice.Object,
+            new Mock<IMediaService>().Object,
+            new Mock<IRecordingSearchService>().Object,
+            new Mock<IEventService>().Object);
 
         var result = await client.TestConnectionAsync();
 

@@ -17,9 +17,11 @@ public class MediaService : IMediaService
 
     public async Task<IReadOnlyList<MediaProfile>> GetProfilesAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            var response = await _client.GetProfilesAsync();
+            var response = await _client.GetProfilesAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
             var profiles = new List<MediaProfile>();
 
             if (response.Profiles != null)
@@ -44,7 +46,7 @@ public class MediaService : IMediaService
 
     public async Task<MediaProfile?> GetProfileByTokenAsync(string token, CancellationToken cancellationToken = default)
     {
-        var profiles = await GetProfilesAsync(cancellationToken);
+        var profiles = await GetProfilesAsync(cancellationToken).ConfigureAwait(false);
         return profiles.FirstOrDefault(p => p.Token.Equals(token, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -54,10 +56,12 @@ public class MediaService : IMediaService
         TransportProtocol protocol = TransportProtocol.RTSP,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
             // SimpleOnvifClient provides a direct GetStreamUriAsync(token) call.
-            var response = await _client.GetStreamUriAsync(profileToken);
+            var response = await _client.GetStreamUriAsync(profileToken).WaitAsync(cancellationToken).ConfigureAwait(false);
 
             return new StreamUri(
                 Uri: response?.Uri ?? string.Empty,
@@ -72,10 +76,10 @@ public class MediaService : IMediaService
         }
     }
 
-    public async Task<IReadOnlyList<string>> GetVideoSourcesAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<string>> GetVideoSourcesAsync(CancellationToken cancellationToken = default)
     {
-        // SharpOnvif doesn't expose GetVideoSources directly in SimpleOnvifClient
-        await Task.CompletedTask;
-        return Array.Empty<string>();
+        // SharpOnvif SimpleOnvifClient does not expose GetVideoSources.
+        throw new NotSupportedException(
+            "GetVideoSources is not supported by the SharpOnvif backend.");
     }
 }

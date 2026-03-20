@@ -4,3 +4,5 @@
 **/bin/
 **/obj/
 
+global.json
+.claude/settings.json

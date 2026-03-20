@@ -61,5 +61,8 @@ public class OnvifClientOptions
 
         if (Port <= 0 || Port > 65535)
             throw new InvalidOperationException("Port must be between 1 and 65535.");
+
+        if (TimeoutSeconds <= 0 || TimeoutSeconds > 300)
+            throw new InvalidOperationException("TimeoutSeconds must be between 1 and 300.");
     }
 }

@@ -46,7 +46,12 @@ public static class ServiceCollectionExtensions
                 sp.GetRequiredService<IOnvifClientAdapter>(),
                 sp.GetRequiredService<OnvifClientOptions>().Host));
 
-        services.AddSingleton<IOnvifClient, OnvifClient>();
+        services.AddSingleton<IOnvifClient>(sp => new OnvifClient(
+            sp.GetRequiredService<OnvifClientOptions>(),
+            sp.GetRequiredService<IDeviceService>(),
+            sp.GetRequiredService<IMediaService>(),
+            sp.GetRequiredService<IRecordingSearchService>(),
+            sp.GetRequiredService<IEventService>()));
 
         return services;
     }

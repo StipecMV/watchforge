@@ -15,25 +15,23 @@ public class RecordingSearchServiceTests
     // ── SearchRecordingsAsync ──────────────────────────────────────────
 
     [Test]
-    public async Task SearchRecordingsAsync_ReturnsEmptyArray()
+    public async Task SearchRecordingsAsync_ThrowsNotSupportedException()
     {
         var start = DateTime.UtcNow.AddHours(-1);
         var end = DateTime.UtcNow;
 
-        var result = await _sut.SearchRecordingsAsync(start, end);
-
-        await Assert.That(result.Count).IsEqualTo(0);
+        await Assert.That(async () => await _sut.SearchRecordingsAsync(start, end))
+            .Throws<NotSupportedException>();
     }
 
     [Test]
-    public async Task SearchRecordingsAsync_WithToken_ReturnsEmptyArray()
+    public async Task SearchRecordingsAsync_WithToken_ThrowsNotSupportedException()
     {
         var start = DateTime.UtcNow.AddHours(-1);
         var end = DateTime.UtcNow;
 
-        var result = await _sut.SearchRecordingsAsync(start, end, "token123");
-
-        await Assert.That(result.Count).IsEqualTo(0);
+        await Assert.That(async () => await _sut.SearchRecordingsAsync(start, end, "token123"))
+            .Throws<NotSupportedException>();
     }
 
     // ── IsSearchSupportedAsync ─────────────────────────────────────────

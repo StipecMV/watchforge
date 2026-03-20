@@ -3,4 +3,8 @@
   <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.Core/WatchForge.NVR.Client.Core.csproj" />
   <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
   <Project Path="testapps/nvr-client/src/WatchForge.NVR.Client.Core.Tests/WatchForge.NVR.Client.Core.Tests.csproj" />
+  <Project Path="server/MotionSentinel/WatchForge.MotionSentinel.Server.Core/WatchForge.MotionSentinel.Server.Core.csproj" />
+  <Project Path="server/MotionSentinel/WatchForge.MotionSentinel.Server.Service/WatchForge.MotionSentinel.Server.Service.csproj" />
+  <Project Path="server/MotionSentinel/WatchForge.MotionSentinel.Server.Core.Tests/WatchForge.MotionSentinel.Server.Core.Tests.csproj" />
+  <Project Path="server/MotionSentinel/WatchForge.MotionSentinel.Server.Service.Tests/WatchForge.MotionSentinel.Server.Service.Tests.csproj" />
 </Solution>

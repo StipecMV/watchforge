@@ -15,30 +15,45 @@ watchforge/
 │   └── nvr-client/              # .NET NVR Client for ONVIF devices
 │       └── src/
 │           ├── WatchForge.NVR.Client.Core/
+│           ├── WatchForge.NVR.Client.Core.Tests/
 │           └── WatchForge.NVR.Client.TestApp/
 ├── client/                      # Frontend client application
 ├── db/
 │   └── queries/                 # Database schema and queries
 └── server/                      # Dotnet-based server components
+    └── MotionSentinel/          # Linux Worker Service — OpenCV motion detection
+        ├── WatchForge.MotionSentinel.Server.Core/
+        ├── WatchForge.MotionSentinel.Server.Core.Tests/
+        ├── WatchForge.MotionSentinel.Server.Service/
+        └── WatchForge.MotionSentinel.Server.Service.Tests/
 ```
 
 ## ✨ Features
 
-### NVR Client (.NET)
+### MotionSentinel (.NET · Linux)
+- 🎯 Farneback Dense Optical Flow — per-frame motion region detection using OpenCV
+- 📁 Local filesystem — watches NVR recordings folder, writes JSON detection results
+- ⚡ FileSystemWatcher + backfill — picks up files written while the service was down
+- 🔌 Headless Worker Service — runs as a systemd unit, no UI required
+- 🧪 test coverage via TUnit + Moq
+
+See [server/MotionSentinel/README.md](server/MotionSentinel/README.md) for full docs.
+
+### NVR Client (.NET· Linux)
 - 📹 ONVIF Client - Full ONVIF protocol support
 - 🔧 SharpOnvif - Uses actively maintained SharpOnvif library
-- 🏗️ SOLID Architecture - Clean code with dependency injection
-- 🖥️ Cross-platform - .NET 10 supported on Windows, macOS, Linux (x64/arm64 and other supported runtimes)
-- 🧪 Test project not included in this repository version (no `tests/` folder or `WatchForge.NVR.Client.TestApp.Tests` present)
-- ✅ Codelab coverage recommendation: add CI test suite if required for your fork
+- 🖥️ .NET 10 supported Linux (x64)
+- 🧪 test coverage via TUnit + Moq
+See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for full docs.
 
 ## 🛠️ Tech Stack
 
 ### .NET Components
 - **Framework**: .NET 10
 - **ONVIF**: SharpOnvif library
-- **Platform**: Windows, macOS, Linux (x64, ARM64)
-- **Testing**: NUnit + TUnit with code coverage
+- **Motion detection**: OpenCV (Farneback optical flow) via OpenCvSharp4
+- **Platform**: Linux (x64);
+- **Testing**: TUnit + Moq with code coverage
 
 ## 👨‍💻 Getting Started
 
@@ -46,7 +61,7 @@ watchforge/
 
 #### For .NET Components
 - .NET 10 SDK
-- Any .NET 10 runtime platform (Windows, macOS, Linux x64/arm64)
+- Any .NET 10 runtime platform (Linux x64)
 
 ### Clone the Repository
 
@@ -54,24 +69,6 @@ watchforge/
 git clone https://github.com/StipecMV/watchforge
 cd watchforge
 ```
-
-### NVR Client Quick Start
-
-See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for:
-- Installation and configuration
-- Build instructions (all platforms)
-- Run and test commands
-- Publishing options
-
-## � NVR Client details
-
-For full architecture, run instructions, tests, and environment variable docs see:
-
-- [testapps/nvr-client/README.md](testapps/nvr-client/README.md)
-
-## � Architecture
-
-See [testapps/nvr-client/README.md](testapps/nvr-client/README.md#-architecture) for the detailed architecture diagram.
 
 ## �📝 License
 

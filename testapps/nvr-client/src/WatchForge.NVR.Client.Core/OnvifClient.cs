@@ -12,6 +12,7 @@ public class OnvifClient : IOnvifClient
 
     public OnvifClient(OnvifClientOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
         options.Validate();
 
         Options = options;
@@ -25,14 +26,29 @@ public class OnvifClient : IOnvifClient
         Events = new EventService(_adapter, Host);
     }
 
-    internal OnvifClient(OnvifClientOptions options, IDeviceService device)
+    /// <summary>
+    /// DI constructor — services are owned and disposed by the container.
+    /// Also used as test helper: pass mocks for the services under test.
+    /// </summary>
+    internal OnvifClient(
+        OnvifClientOptions options,
+        IDeviceService device,
+        IMediaService media,
+        IRecordingSearchService recordingSearch,
+        IEventService events)
     {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(device);
+        ArgumentNullException.ThrowIfNull(media);
+        ArgumentNullException.ThrowIfNull(recordingSearch);
+        ArgumentNullException.ThrowIfNull(events);
         Options = options;
         Host = options.Host;
+        // _adapter stays null — owned by the DI container, not by this instance
         Device = device;
-        Media = null!;
-        RecordingSearch = null;
-        Events = null;
+        Media = media;
+        RecordingSearch = recordingSearch;
+        Events = events;
     }
 
     public OnvifClientOptions Options { get; }
@@ -62,24 +78,8 @@ public class OnvifClient : IOnvifClient
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
         if (_disposed) return;
-
-        if (disposing)
-        {
-            _adapter?.Dispose();
-        }
-
+        _adapter?.Dispose();
         _disposed = true;
-    }
-
-    ~OnvifClient()
-    {
-        Dispose(false);
     }
 }
