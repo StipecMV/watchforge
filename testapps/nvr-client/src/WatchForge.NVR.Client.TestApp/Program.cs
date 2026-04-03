@@ -1,138 +1,121 @@
-Console.WriteLine("🏭 WatchForge NVR Client Test App");
-Console.WriteLine("==================================");
+using Microsoft.Extensions.Configuration;
+
+Console.WriteLine("🔧 WatchForge DVRIP File Downloader");
+Console.WriteLine("====================================");
 Console.WriteLine();
 
-// Build host with DI
-using var host = Host.CreateDefaultBuilder(args)
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        config.SetBasePath(Directory.GetCurrentDirectory());
-        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-        config.AddEnvironmentVariables("WATCHFORGE_");
-        config.AddCommandLine(args);
-    })
-    .ConfigureServices((context, services) =>
-    {
-        services.AddWatchForgeNvrClient(options =>
-        {
-            options.Host = context.Configuration["Onvif:Host"] ?? "192.168.68.58";
-            options.Port = int.Parse(context.Configuration["Onvif:Port"] ?? "80");
-            options.Username = context.Configuration["Onvif:Username"] ?? string.Empty;
-            options.Password = context.Configuration["Onvif:Password"] ?? string.Empty;
-            options.ServicePath = context.Configuration["Onvif:ServicePath"] ?? "/onvif/device_service";
-            options.UseHttps = bool.Parse(context.Configuration["Onvif:UseHttps"] ?? "false");
-            options.TimeoutSeconds = int.Parse(context.Configuration["Onvif:TimeoutSeconds"] ?? "30");
-        });
-    })
+var config = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false)
     .Build();
 
-// Get the client from DI
-var client = host.Services.GetRequiredService<IOnvifClient>();
+var host     = config["Dvrip:Host"]     ?? throw new InvalidOperationException("Dvrip:Host not configured");
+var port     = int.Parse(config["Dvrip:Port"] ?? "34567");
+var username = config["Dvrip:Username"] ?? throw new InvalidOperationException("Dvrip:Username not configured");
+var password = config["Dvrip:Password"] ?? throw new InvalidOperationException("Dvrip:Password not configured");
 
+Console.WriteLine($"🔌 Connecting to {host}:{port} ...");
+
+using var client = new DvripClient(host, port, username, password);
 try
 {
-    Console.WriteLine($"🔌 Connecting to {client.Host}...");
+    // ── 1. Login ──────────────────────────────────────────────────────────────
+    var login = await client.LoginAsync();
+
+    Console.WriteLine("✅ Login OK");
+    Console.WriteLine($"   Device type  : {login.DeviceType}");
+    Console.WriteLine($"   Channels     : {login.ChannelNum}");
+    Console.WriteLine($"   Session ID   : {login.SessionIdHex}");
+    Console.WriteLine($"   Keep-alive   : {login.AliveInterval}s");
     Console.WriteLine();
 
-    // 1️⃣ Test connection & get device info
-    var deviceInfo = await client.Device.GetDeviceInformationAsync();
-    Console.WriteLine($"✅ Connection OK!");
-    Console.WriteLine($"   Manufacturer: {deviceInfo.Manufacturer}");
-    Console.WriteLine($"   Model: {deviceInfo.Model}");
-    Console.WriteLine($"   Firmware: {deviceInfo.FirmwareVersion}");
-    if (!string.IsNullOrEmpty(deviceInfo.SerialNumber))
-        Console.WriteLine($"   Serial: {deviceInfo.SerialNumber}");
-    Console.WriteLine();
+    // ── 2. Query files (last 7 days, all channels) ────────────────────────────
+    var from = DateTime.Now.Date.AddDays(-7);
+    var to   = DateTime.Now;
 
-    // 2️⃣ Get available services
-    var services = await client.Device.GetServicesAsync();
-    Console.WriteLine($"📡 Available ONVIF services ({services.Count}):");
-    foreach (var svc in services)
+    Console.WriteLine($"🔍 Querying files  {from:yyyy-MM-dd} → {to:yyyy-MM-dd HH:mm:ss}");
+
+    var allFiles = new List<NvrFile>();
+    for (int ch = 0; ch < login.ChannelNum; ch++)
     {
-        var icon = svc.Namespace.Contains("media", StringComparison.OrdinalIgnoreCase) ? "📹" :
-                   svc.Namespace.Contains("device", StringComparison.OrdinalIgnoreCase) ? "🔧" :
-                   svc.Namespace.Contains("recording", StringComparison.OrdinalIgnoreCase) ? "💾" :
-                   svc.Namespace.Contains("event", StringComparison.OrdinalIgnoreCase) ? "🔔" : "•";
-        Console.WriteLine($"   {icon} {svc.Namespace}");
-    }
-    Console.WriteLine();
-
-    // 3️⃣ Get media profiles
-    var profiles = await client.Media.GetProfilesAsync();
-    Console.WriteLine($"📹 Found {profiles.Count} profile(s):");
-    foreach (var profile in profiles)
-    {
-        var fixedIcon = profile.IsFixed == true ? "🔒" : "📌";
-        Console.WriteLine($"   {fixedIcon} {profile.Name} (token: {profile.Token})");
-    }
-    Console.WriteLine();
-
-    // 4️⃣ Get RTSP stream URI for first profile
-    if (profiles.Count > 0)
-    {
-        var firstProfile = profiles[0];
-        var streamUri = await client.Media.GetStreamUriAsync(
-            firstProfile.Token,
-            StreamType.RTPUnicast,
-            TransportProtocol.RTSP);
-
-        Console.WriteLine($"🔗 RTSP URL (for '{firstProfile.Name}'):");
-        Console.WriteLine($"   {streamUri.Uri}");
-        Console.WriteLine();
+        var files = await client.QueryFilesAsync(from, to, ch);
+        allFiles.AddRange(files);
     }
 
-    // 5️⃣ Check recording search support
-    Console.WriteLine("🔍 Checking RecordingSearch...");
-    if (client.RecordingSearch != null)
+    // Deduplicate by filename (some firmware reports the same file on multiple channels)
+    allFiles = allFiles
+        .DistinctBy(f => f.FileName)
+        .OrderBy(f => f.BeginTime)
+        .ToList();
+
+    Console.WriteLine();
+
+    // ── 3. Print file list ────────────────────────────────────────────────────
+    Console.WriteLine($"📂 Found {allFiles.Count} file(s):");
+    if (allFiles.Count == 0)
     {
-        var isSupported = await client.RecordingSearch.IsSearchSupportedAsync();
-        if (isSupported)
-        {
-            Console.WriteLine("   ✅ RecordingSearch is supported!");
-        }
-        else
-        {
-            Console.WriteLine("   ⚠️ RecordingSearch is not available");
-            Console.WriteLine("      → Use RTSP + time filter to retrieve recordings");
-        }
+        Console.WriteLine("   (no files in the last 7 days)");
     }
     else
     {
-        Console.WriteLine("   ⚠️ RecordingSearch service is not initialized");
+        foreach (var f in allFiles)
+        {
+            var size = f.FileLengthMB >= 1.0
+                ? $"{f.FileLengthMB:F1} MB"
+                : $"{f.FileLengthBytes / 1024.0:F1} KB";
+
+            Console.WriteLine($"   📹 {f.FileName}");
+            Console.WriteLine($"       {f.BeginTime:yyyy-MM-dd HH:mm:ss} → {f.EndTime:HH:mm:ss}  [{size}]");
+        }
     }
     Console.WriteLine();
 
-    Console.WriteLine("==================================");
-    Console.WriteLine("✅ Done!");
-}
-catch (OnvifConnectionException ex)
-{
-    Console.WriteLine($"❌ Connection error: {ex.Message}");
-    Console.WriteLine($"   Host: {ex.Host}");
-    if (ex.InnerException != null)
+    // ── 4. Download first file ────────────────────────────────────────────────
+    if (allFiles.Count > 0)
     {
-        Console.WriteLine($"   Detail: {ex.InnerException.Message}");
+        var first       = allFiles[0];
+        var destName    = Path.GetFileName(first.FileName);
+        var destPath    = Path.Combine(Directory.GetCurrentDirectory(), destName);
+
+        Console.WriteLine($"⬇️  Downloading: {destName}");
+        Console.WriteLine($"   Destination : {destPath}");
+        Console.WriteLine($"   Expected    : {first.FileLengthMB:F1} MB");
+
+        long lastReported = 0;
+        var progress = new Progress<long>(bytes =>
+        {
+            if (bytes - lastReported >= 1_048_576 || bytes >= first.FileLengthBytes)
+            {
+                lastReported = bytes;
+                var pct = first.FileLengthBytes > 0 ? bytes * 100 / first.FileLengthBytes : 0;
+                Console.Write($"\r   Progress    : {bytes / 1_048_576.0:F1} MB / {first.FileLengthMB:F1} MB ({pct}%)   ");
+            }
+        });
+
+        try
+        {
+            await client.DownloadFileAsync(first, destPath, progress);
+            Console.WriteLine();
+            Console.WriteLine($"✅ Download complete → {destPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"⚠️  Download failed: {ex.Message}");
+            Console.WriteLine("   The OPPlayBack download protocol is best-effort.");
+            Console.WriteLine("   See the TODO in DvripClient.cs for message ID candidates.");
+        }
+
+        Console.WriteLine();
     }
-    Environment.Exit(1);
-}
-catch (OnvifAuthenticationException ex)
-{
-    Console.WriteLine($"❌ Authentication error: {ex.Message}");
-    Console.WriteLine($"   Username: {ex.Username}");
-    Environment.Exit(2);
-}
-catch (OnvifServiceNotAvailableException ex)
-{
-    Console.WriteLine($"⚠️ Service not available: {ex.Message}");
-    Environment.Exit(3);
+
+    Console.WriteLine("====================================");
+    Console.WriteLine("✅ Done!");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ Unexpected error: {ex.Message}");
-    Console.WriteLine($"   Type: {ex.GetType().Name}");
+    Console.WriteLine($"❌ Error: {ex.Message}");
     if (ex.InnerException != null)
-    {
         Console.WriteLine($"   Inner: {ex.InnerException.Message}");
-    }
-    Environment.Exit(99);
+    Environment.Exit(1);
 }

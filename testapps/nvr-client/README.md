@@ -1,166 +1,147 @@
-# WatchForge NVR Client
+# WatchForge NVR Client — DVRIP File Downloader
 
-WatchForge NVR Client is a .NET 10 console application for connecting to ONVIF-compatible NVR devices and IP cameras.
+A .NET 10 console test app for connecting to **Xiongmai/Sofia-based NVR devices** (tested on Movols brand) using the native **DVRIP** protocol. Lists and downloads recorded H.264 files over raw TCP.
 
-## 🎯 Features
+## What Is DVRIP and Why Not ONVIF?
 
-- **ONVIF Client** - Full ONVIF protocol support
-- **SharpOnvif** - Uses actively maintained SharpOnvif library
-- **SOLID Architecture** - Clean code with dependency injection
-- **Cross-platform** - Windows, macOS, Linux (x64, ARM64)
-- **Unit Tests** - Full service-layer coverage with TUnit + Moq
+**DVRIP** (DVR Internet Protocol, also called NetSDK or Sofia protocol) is the proprietary binary TCP protocol used by Xiongmai-based NVR/DVR firmware (brand name: Sofia). It runs on port 34567 by default.
 
-## 📁 Project Structure
+Although the NVR advertises partial ONVIF support, in practice the Movols/Xiongmai ONVIF implementation does not expose the Recording Search service, making it impossible to enumerate or download recordings through ONVIF alone. DVRIP provides full access to the file system, live streams, and recorded files.
+
+## NVR Details
+
+| Field        | Value              |
+|--------------|--------------------|
+| Brand        | Movols (OEM Xiongmai, Sofia firmware) |
+| Host         | 192.168.68.58      |
+| DVRIP port   | 34567              |
+| Device type  | HVR                |
+| Channels     | 9 (6 active)       |
+
+## Project Structure
 
 ```
 testapps/nvr-client/
 └── src/
-    ├── WatchForge.NVR.Client.Core/        # ONVIF client library
-    ├── WatchForge.NVR.Client.Core.Tests/  # Unit tests (TUnit + Moq)
-    └── WatchForge.NVR.Client.TestApp/     # Console test application
+    ├── WatchForge.NVR.Client.TestApp/           # DVRIP console app
+    │   ├── Program.cs                           # Entry point
+    │   ├── DvripClient.cs                       # Login, file query, download
+    │   ├── DvripPacket.cs                       # Packet build/parse
+    │   ├── Models/
+    │   │   ├── LoginResult.cs
+    │   │   └── NvrFile.cs
+    │   └── appsettings.json
+    └── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit + Moq)
+        ├── NvrFileTests.cs
+        ├── SofiaPasswordTests.cs
+        ├── DvripPacketTests.cs
+        └── FileQueryTests.cs
 ```
 
-Projects are managed from the root `WatchForge.slnx` solution file.
+## Configuration
 
-## 🛠️ Requirements
-
-- .NET 10 SDK
-- Windows, macOS, or Linux (x64, ARM64)
-
-## 🚀 Quick Start
-
-### 1. Install .NET 10
-
-```bash
-# Windows (winget)
-winget install Microsoft.DotNet.SDK.10
-
-# macOS (Homebrew)
-brew install --cask dotnet-sdk
-
-# Linux (Arch/CachyOS)
-yay -S dotnet-sdk-10
-
-# Or official installer
-wget https://dot.net/v1/dotnet-install.sh
-chmod +x dotnet-install.sh
-./dotnet-install.sh --channel 10.0
-```
-
-### 2. Configuration
-
-Edit `appsettings.json` in the `WatchForge.NVR.Client.TestApp` folder:
+Edit `appsettings.json` in `WatchForge.NVR.Client.TestApp/`:
 
 ```json
 {
-  "Onvif": {
+  "Dvrip": {
     "Host": "192.168.68.58",
-    "Port": 80,
-    "Username": "Cervenica110",
-    "Password": "your_password",
-    "ServicePath": "/onvif/device_service",
-    "UseHttps": false,
-    "TimeoutSeconds": 30
+    "Port": 34567,
+    "Username": "your_username",
+    "Password": "your_password"
   }
 }
 ```
 
-### 3. Build
+## How to Run
 
 ```bash
-cd testapps/nvr-client
-
-# Build for current platform
-dotnet build
-
-# Build for Raspberry Pi (ARM64)
-dotnet publish -c Release -r linux-arm64 --self-contained
-
-# Build for Linux x64
-dotnet publish -c Release -r linux-x64 --self-contained
-
-# Build for Windows x64
-dotnet publish -c Release -r win-x64 --self-contained
-
-# Build for macOS ARM64
-dotnet publish -c Release -r osx-arm64 --self-contained
+cd testapps/nvr-client/src/WatchForge.NVR.Client.TestApp
+dotnet run
 ```
 
-### 4. Run
+Or from the repo root:
 
 ```bash
-# Debug build
-dotnet run --project src/WatchForge.NVR.Client.TestApp
-
-# Release build (after publishing)
-# Linux/macOS
-./src/WatchForge.NVR.Client.TestApp/bin/Release/net10.0/linux-x64/publish/WatchForge.NVR.Client.TestApp
-
-# Windows
-.\src\WatchForge.NVR.Client.TestApp\bin\Release\net10.0\win-x64\publish\WatchForge.NVR.Client.TestApp.exe
+dotnet run --project testapps/nvr-client/src/WatchForge.NVR.Client.TestApp
 ```
 
-## 🧪 Testing
+## How to Run Tests
 
 ```bash
-# Run all tests (from repo root)
+# All tests in this sub-project
+dotnet test testapps/nvr-client/src/WatchForge.NVR.Client.TestApp.Tests
+
+# All tests in the solution
 dotnet test --solution WatchForge.slnx
-
-# Run only NVR client tests
-dotnet test src/WatchForge.NVR.Client.Core.Tests/
-
-# Run with code coverage (from repo root)
-dotnet-coverage collect \
-  "dotnet test --solution WatchForge.slnx" \
-  -f xml -o coverage.xml
 ```
 
-## 📦 Publishing as Single File
+## Expected Output
 
-```bash
-dotnet publish -c Release \
-  -r linux-arm64 \
-  --self-contained \
-  /p:PublishSingleFile=true \
-  /p:PublishTrimmed=true \
-  /p:EnableCompressionInSingleFile=true
+```
+🔧 WatchForge DVRIP File Downloader
+====================================
+
+🔌 Connecting to 192.168.68.58:34567 ...
+✅ Login OK
+   Device type  : HVR
+   Channels     : 9
+   Session ID   : 0x0000001B
+   Keep-alive   : 21s
+
+🔍 Querying files  2026-03-27 → 2026-04-03 14:22:10
+
+📂 Found 12 file(s):
+   📹 /idea0/2026-04-02/002/10.08.02-10.30.00[R][@8600f][1].h264
+       2026-04-02 10:08:02 → 10:30:00  [1.0 MB]
+   ...
+
+⬇️  Downloading: 10.08.02-10.30.00[R][@8600f][1].h264
+   Destination : /home/user/10.08.02-10.30.00[R][@8600f][1].h264
+   Expected    : 1.0 MB
+   Progress    : 1.0 MB / 1.0 MB (100%)
+✅ Download complete → /home/user/10.08.02-10.30.00[R][@8600f][1].h264
+
+====================================
+✅ Done!
 ```
 
-## 🔌 Environment Variables
+## Known NVR Quirk — Malformed Datetime in FileQuery Response
 
-Configuration can be overridden using environment variables (matching `appsettings.json` structure):
+The Movols/Sofia firmware emits datetime strings **without the space** between date and time in FileQuery responses:
 
-```bash
-export Onvif__Host=192.168.68.58
-export Onvif__Port=8080
-export Onvif__Username=your_username
-export Onvif__Password=your_password
+```
+Standard: "2026-04-02 10:08:02"
+NVR emits: "2026-04-0210:08:02"   ← no space
 ```
 
-Or in PowerShell (Windows):
+`NvrFile.ParseNvrDateTime()` handles both formats. The DVRIP request uses the standard format with a space; only the response is malformed.
 
-```powershell
-$env:Onvif__Host="192.168.68.58"
-$env:Onvif__Port="8080"
-$env:Onvif__Username="your_username"
-$env:Onvif__Password="your_password"
-```
+## DVRIP Packet Format
 
-## 📊 Architecture
+| Offset | Length | Field          |
+|--------|--------|----------------|
+| 0      | 1      | Magic = 0xFF   |
+| 1      | 1      | Version = 0x00 |
+| 2–3    | 2      | Reserved       |
+| 4–7    | 4      | Session ID (uint32 LE) |
+| 8–11   | 4      | Sequence number (uint32 LE) |
+| 12     | 1      | Total packets  |
+| 13     | 1      | Current packet |
+| 14–15  | 2      | Message ID (uint16 LE) |
+| 16–19  | 4      | Payload length (uint32 LE) |
+| 20+    | N      | JSON payload (UTF-8, null-terminated) |
 
-```mermaid
-graph TD
-    A[Program.cs Main] --> B[Host.CreateDefaultBuilder]
-    B --> C[IServiceCollection DI Container]
-    C --> D[IOnvifClient]
-    D --> E[DeviceService]
-    D --> F[MediaService]
-    D --> G[RecordingSearchService]
-    D --> H[EventService]
-    C --> I[SharpOnvifClient.SimpleOnvifClient]
-    I --> J[Low-level ONVIF Communication]
-```
+Key message IDs:
 
-## 📝 License
+| ID   | Direction | Purpose         |
+|------|-----------|-----------------|
+| 1000 | Request   | Login           |
+| 1001 | Response  | Login           |
+| 1442 | Request   | OPFileQuery     |
+| 1443 | Response  | OPFileQuery     |
+| 1466 | Request   | OPPlayBack (download — see TODO in DvripClient.cs) |
 
-Part of the WatchForge project.
+## Download Status
+
+File listing is fully implemented. File download is best-effort: the OPPlayBack message ID and post-handshake stream framing vary by firmware version. See the `TODO` block in [DvripClient.cs](src/WatchForge.NVR.Client.TestApp/DvripClient.cs) for details.

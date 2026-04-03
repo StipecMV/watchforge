@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>WatchForge.NVR.Client.Core.Tests</RootNamespace>
+    <RootNamespace>WatchForge.NVR.Client.TestApp.Tests</RootNamespace>
     <OutputType>Exe</OutputType>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
@@ -14,15 +14,11 @@
     <PackageReference Include="TUnit" Version="1.19.74" />
     <PackageReference Include="TUnit.Assertions" Version="1.19.74" />
     <PackageReference Include="coverlet.collector" Version="8.0.1" />
-    <PackageReference Include="coverlet.msbuild" Version="8.0.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
-    <PackageReference Include="SharpOnvifClient" Version="0.9.1" />
-    <PackageReference Include="SharpOnvifCommon" Version="0.9.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../WatchForge.NVR.Client.Core/WatchForge.NVR.Client.Core.csproj" />
+    <ProjectReference Include="../WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
   </ItemGroup>
 
 </Project>

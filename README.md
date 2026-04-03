@@ -12,11 +12,10 @@ WatchForge is a self-hosted video processing for NVR (Network Video Recorder) sy
 watchforge/
 ├── WatchForge.slnx              # Main .NET solution file
 ├── testapps/                    # Test applications
-│   └── nvr-client/              # .NET NVR Client for ONVIF devices
+│   └── nvr-client/              # DVRIP file downloader for Xiongmai/Sofia NVR
 │       └── src/
-│           ├── WatchForge.NVR.Client.Core/
-│           ├── WatchForge.NVR.Client.Core.Tests/
-│           └── WatchForge.NVR.Client.TestApp/
+│           ├── WatchForge.NVR.Client.TestApp/
+│           └── WatchForge.NVR.Client.TestApp.Tests/
 ├── client/                      # Frontend client application
 ├── db/
 │   └── queries/                 # Database schema and queries
@@ -39,10 +38,10 @@ watchforge/
 
 See [server/MotionSentinel/README.md](server/MotionSentinel/README.md) for full docs.
 
-### NVR Client (.NET· Linux)
-- 📹 ONVIF Client - Full ONVIF protocol support
-- 🔧 SharpOnvif - Uses actively maintained SharpOnvif library
-- 🖥️ .NET 10 supported Linux (x64)
+### NVR Client (.NET · Linux)
+- 📡 DVRIP protocol — native Xiongmai/Sofia TCP protocol (port 34567)
+- 🔐 Sofia MD5 login, file listing, best-effort H.264 file download
+- 🖥️ .NET 10, Linux (x64, arm64)
 - 🧪 test coverage via TUnit + Moq
 See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for full docs.
 
@@ -50,7 +49,7 @@ See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for full docs
 
 ### .NET Components
 - **Framework**: .NET 10
-- **ONVIF**: SharpOnvif library
+- **NVR protocol**: DVRIP (raw TCP, Xiongmai/Sofia firmware)
 - **Motion detection**: OpenCV (Farneback optical flow) via OpenCvSharp4
 - **Platform**: Linux (x64);
 - **Testing**: TUnit + Moq with code coverage
