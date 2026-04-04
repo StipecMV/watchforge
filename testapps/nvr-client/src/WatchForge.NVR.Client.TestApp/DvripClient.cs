@@ -50,12 +50,14 @@ public sealed class DvripClient : IDisposable
         _seqNum = 0;
         _sessionId = 0;
 
-        var hash = ComputeSofiaHash(_password);
+        // This NVR (Movols/Xiongmai HVR, Sofia firmware) rejects the Sofia MD5 hash
+        // (EncryptType "MD5") with Ret 203. Plain text credentials with EncryptType "None"
+        // return Ret 100. Confirmed via raw TCP test in Python.
         var loginJson = JsonSerializer.Serialize(new
         {
-            EncryptType = "MD5",
+            EncryptType = "None",
             LoginType   = "DVRIP",
-            PassWord    = hash,
+            PassWord    = _password,
             UserName    = _username
         });
 

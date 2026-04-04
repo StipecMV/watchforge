@@ -9,10 +9,13 @@ var config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: false)
     .Build();
 
-var host     = config["Dvrip:Host"]     ?? throw new InvalidOperationException("Dvrip:Host not configured");
-var port     = int.Parse(config["Dvrip:Port"] ?? "34567");
-var username = config["Dvrip:Username"] ?? throw new InvalidOperationException("Dvrip:Username not configured");
-var password = config["Dvrip:Password"] ?? throw new InvalidOperationException("Dvrip:Password not configured");
+var host          = config["Dvrip:Host"]     ?? throw new InvalidOperationException("Dvrip:Host not configured");
+var port          = int.Parse(config["Dvrip:Port"] ?? "34567");
+var username      = config["Dvrip:Username"] ?? throw new InvalidOperationException("Dvrip:Username not configured");
+var password      = config["Dvrip:Password"] ?? throw new InvalidOperationException("Dvrip:Password not configured");
+var queryDays     = int.Parse(config["Dvrip:QueryDays"]     ?? "7");
+var downloadCount = int.Parse(config["Dvrip:DownloadCount"] ?? "1");
+var downloadDir   = config["Dvrip:DownloadDir"] is { Length: > 0 } d ? d : Directory.GetCurrentDirectory();
 
 Console.WriteLine($"🔌 Connecting to {host}:{port} ...");
 
@@ -29,11 +32,11 @@ try
     Console.WriteLine($"   Keep-alive   : {login.AliveInterval}s");
     Console.WriteLine();
 
-    // ── 2. Query files (last 7 days, all channels) ────────────────────────────
-    var from = DateTime.Now.Date.AddDays(-7);
+    // ── 2. Query files ────────────────────────────────────────────────────────
+    var from = DateTime.Now.Date.AddDays(-queryDays);
     var to   = DateTime.Now;
 
-    Console.WriteLine($"🔍 Querying files  {from:yyyy-MM-dd} → {to:yyyy-MM-dd HH:mm:ss}");
+    Console.WriteLine($"🔍 Querying files  {from:yyyy-MM-dd} → {to:yyyy-MM-dd HH:mm:ss}  (last {queryDays} day(s))");
 
     var allFiles = new List<NvrFile>();
     for (int ch = 0; ch < login.ChannelNum; ch++)
@@ -42,7 +45,6 @@ try
         allFiles.AddRange(files);
     }
 
-    // Deduplicate by filename (some firmware reports the same file on multiple channels)
     allFiles = allFiles
         .DistinctBy(f => f.FileName)
         .OrderBy(f => f.BeginTime)
@@ -54,63 +56,69 @@ try
     Console.WriteLine($"📂 Found {allFiles.Count} file(s):");
     if (allFiles.Count == 0)
     {
-        Console.WriteLine("   (no files in the last 7 days)");
+        Console.WriteLine("   (no files in the given period)");
+        Console.WriteLine();
+        Console.WriteLine("====================================");
+        Console.WriteLine("✅ Done!");
+        return;
     }
-    else
-    {
-        foreach (var f in allFiles)
-        {
-            var size = f.FileLengthMB >= 1.0
-                ? $"{f.FileLengthMB:F1} MB"
-                : $"{f.FileLengthBytes / 1024.0:F1} KB";
 
-            Console.WriteLine($"   📹 {f.FileName}");
-            Console.WriteLine($"       {f.BeginTime:yyyy-MM-dd HH:mm:ss} → {f.EndTime:HH:mm:ss}  [{size}]");
-        }
+    foreach (var f in allFiles)
+    {
+        var size = f.FileLengthMB >= 1.0
+            ? $"{f.FileLengthMB:F1} MB"
+            : $"{f.FileLengthBytes / 1024.0:F1} KB";
+
+        Console.WriteLine($"   📹 {f.FileName}");
+        Console.WriteLine($"       {f.BeginTime:yyyy-MM-dd HH:mm:ss} → {f.EndTime:HH:mm:ss}  [{size}]");
     }
     Console.WriteLine();
 
-    // ── 4. Download first file ────────────────────────────────────────────────
-    if (allFiles.Count > 0)
-    {
-        var first       = allFiles[0];
-        var destName    = Path.GetFileName(first.FileName);
-        var destPath    = Path.Combine(Directory.GetCurrentDirectory(), destName);
+    // ── 4. Download N files ───────────────────────────────────────────────────
+    var toDownload = allFiles.Take(downloadCount).ToList();
+    Console.WriteLine($"⬇️  Downloading {toDownload.Count} of {allFiles.Count} file(s) → {downloadDir}");
+    Console.WriteLine();
 
-        Console.WriteLine($"⬇️  Downloading: {destName}");
-        Console.WriteLine($"   Destination : {destPath}");
-        Console.WriteLine($"   Expected    : {first.FileLengthMB:F1} MB");
+    int succeeded = 0, failed = 0;
+    for (int i = 0; i < toDownload.Count; i++)
+    {
+        var file     = toDownload[i];
+        var destName = Path.GetFileName(file.FileName);
+        var destPath = Path.Combine(downloadDir, destName);
+
+        Console.WriteLine($"   [{i + 1}/{toDownload.Count}] {destName}  ({file.FileLengthMB:F1} MB)");
 
         long lastReported = 0;
         var progress = new Progress<long>(bytes =>
         {
-            if (bytes - lastReported >= 1_048_576 || bytes >= first.FileLengthBytes)
+            if (bytes - lastReported >= 1_048_576 || bytes >= file.FileLengthBytes)
             {
                 lastReported = bytes;
-                var pct = first.FileLengthBytes > 0 ? bytes * 100 / first.FileLengthBytes : 0;
-                Console.Write($"\r   Progress    : {bytes / 1_048_576.0:F1} MB / {first.FileLengthMB:F1} MB ({pct}%)   ");
+                var pct = file.FileLengthBytes > 0 ? bytes * 100 / file.FileLengthBytes : 0;
+                Console.Write($"\r         Progress: {bytes / 1_048_576.0:F1} MB / {file.FileLengthMB:F1} MB ({pct}%)   ");
             }
         });
 
         try
         {
-            await client.DownloadFileAsync(first, destPath, progress);
+            await client.DownloadFileAsync(file, destPath, progress);
             Console.WriteLine();
-            Console.WriteLine($"✅ Download complete → {destPath}");
+            Console.WriteLine($"         ✅ {destPath}");
+            succeeded++;
         }
         catch (Exception ex)
         {
             Console.WriteLine();
-            Console.WriteLine($"⚠️  Download failed: {ex.Message}");
-            Console.WriteLine("   The OPPlayBack download protocol is best-effort.");
-            Console.WriteLine("   See the TODO in DvripClient.cs for message ID candidates.");
+            Console.WriteLine($"         ⚠️  Failed: {ex.Message}");
+            Console.WriteLine("            (See TODO in DvripClient.cs for OPPlayBack message ID candidates)");
+            failed++;
         }
 
         Console.WriteLine();
     }
 
     Console.WriteLine("====================================");
-    Console.WriteLine("✅ Done!");
+    Console.WriteLine($"✅ Done!  {succeeded} downloaded, {failed} failed.");
 }
 catch (Exception ex)
 {
