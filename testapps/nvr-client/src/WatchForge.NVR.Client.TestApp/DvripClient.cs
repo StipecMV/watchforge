@@ -67,19 +67,19 @@ public sealed class DvripClient : IDisposable
         using var doc  = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        var ret = root.GetProperty("Ret").GetInt32();
+        var ret = GetNvrProp(root, "Ret").GetInt32();
         if (ret != 100)
             throw new InvalidOperationException($"Login failed — NVR returned code {ret}");
 
-        var sessionHex = root.GetProperty("SessionID").GetString() ?? "0x0";
+        var sessionHex = GetNvrProp(root, "SessionID").GetString() ?? "0x0";
         _sessionId = Convert.ToUInt32(sessionHex, 16);
 
         return new LoginResult
         {
-            DeviceType    = root.GetProperty("DeviceType").GetString() ?? "Unknown",
-            ChannelNum    = root.GetProperty("ChannelNum").GetInt32(),
+            DeviceType    = GetNvrProp(root, "DeviceType").GetString() ?? "Unknown",
+            ChannelNum    = GetNvrProp(root, "ChannelNum").GetInt32(),
             SessionId     = _sessionId,
-            AliveInterval = root.GetProperty("AliveInterval").GetInt32()
+            AliveInterval = GetNvrProp(root, "AliveInterval").GetInt32()
         };
     }
 
@@ -150,7 +150,7 @@ public sealed class DvripClient : IDisposable
         var json = Encoding.UTF8.GetString(response.Payload).TrimEnd('\0');
 
         using var doc = JsonDocument.Parse(json);
-        var ret = doc.RootElement.GetProperty("Ret").GetInt32();
+        var ret = GetNvrProp(doc.RootElement, "Ret").GetInt32();
         if (ret != 100)
             throw new InvalidOperationException(
                 $"OPPlayBack Start failed — NVR returned code {ret}. " +
@@ -213,7 +213,7 @@ public sealed class DvripClient : IDisposable
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        if (root.GetProperty("Ret").GetInt32() != 100)
+        if (GetNvrProp(root, "Ret").GetInt32() != 100)
             return [];
 
         if (!root.TryGetProperty("OPFileQuery", out var fileArray)
@@ -225,18 +225,39 @@ public sealed class DvripClient : IDisposable
         {
             files.Add(new NvrFile
             {
-                FileName        = item.GetProperty("FileName").GetString() ?? "",
-                BeginTime       = NvrFile.ParseNvrDateTime(item.GetProperty("BeginTime").GetString()),
-                EndTime         = NvrFile.ParseNvrDateTime(item.GetProperty("EndTime").GetString()),
-                FileLengthBytes = NvrFile.ParseFileLength(item.GetProperty("FileLength").GetString()),
-                DiskNo          = item.GetProperty("DiskNo").GetInt32(),
-                SerialNo        = item.GetProperty("SerialNo").GetInt32()
+                FileName        = GetNvrProp(item, "FileName").GetString() ?? "",
+                BeginTime       = NvrFile.ParseNvrDateTime(GetNvrProp(item, "BeginTime").GetString()),
+                EndTime         = NvrFile.ParseNvrDateTime(GetNvrProp(item, "EndTime").GetString()),
+                FileLengthBytes = NvrFile.ParseFileLength(GetNvrProp(item, "FileLength").GetString()),
+                DiskNo          = GetNvrProp(item, "DiskNo").GetInt32(),
+                SerialNo        = GetNvrProp(item, "SerialNo").GetInt32()
             });
         }
         return files;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Reads a property from a NVR JSON element defensively.
+    /// Sofia firmware sometimes emits property names with trailing/leading whitespace
+    /// (e.g. "DeviceType " instead of "DeviceType"). Tries the exact name first,
+    /// then falls back to a case-sensitive trimmed scan of all properties.
+    /// Throws <see cref="KeyNotFoundException"/> if the property is not found at all.
+    /// </summary>
+    private static JsonElement GetNvrProp(JsonElement element, string name)
+    {
+        if (element.TryGetProperty(name, out var exact))
+            return exact;
+
+        foreach (var prop in element.EnumerateObject())
+        {
+            if (prop.Name.Trim() == name)
+                return prop.Value;
+        }
+
+        throw new KeyNotFoundException($"NVR response missing property '{name}'");
+    }
 
     private async Task<DvripPacket> SendAndReceiveAsync(ushort msgId, string json, CancellationToken ct)
     {
