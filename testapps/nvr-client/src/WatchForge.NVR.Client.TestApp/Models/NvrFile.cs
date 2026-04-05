@@ -42,17 +42,19 @@ public sealed class NvrFile
     }
 
     /// <summary>
-    /// Parses DVRIP FileLength values. Accepts hex strings ("0x00103D75")
-    /// and plain decimal strings. Returns 0 for null, empty, or unparseable input.
+    /// Parses DVRIP FileLength values. Accepts hex strings ("0x00103D75") and plain decimals.
+    /// FileLength is in 1024-byte blocks (confirmed against real Movols/Xiongmai NVR).
+    /// Returns 0 for null, empty, or unparseable input.
     /// </summary>
     public static long ParseFileLength(string? s)
     {
         if (string.IsNullOrEmpty(s)) return 0;
         try
         {
-            return s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            long blocks = s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
                 ? Convert.ToInt64(s, 16)
                 : long.Parse(s, CultureInfo.InvariantCulture);
+            return blocks * 1024;
         }
         catch
         {

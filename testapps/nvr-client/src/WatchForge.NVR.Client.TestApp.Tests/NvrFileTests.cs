@@ -83,40 +83,40 @@ public class NvrFileTests
     [Test]
     public async Task ParseFileLength_HexString_ReturnsByteCount()
     {
-        // Given the hex string from the known NVR response in the spec
-        var input = "0x00103D75";
+        // Given a hex block count from the NVR (0x00000200 = 512 blocks)
+        var input = "0x00000200";
 
         // When parsed
         var result = NvrFile.ParseFileLength(input);
 
-        // Then the correct byte count is returned (0x00103D75 = 1064309)
-        await Assert.That(result).IsEqualTo(1_064_309L);
+        // Then the correct byte count is returned (512 blocks * 1024 = 524288 bytes)
+        await Assert.That(result).IsEqualTo(524_288L);
     }
 
     [Test]
     public async Task ParseFileLength_LowercaseHexPrefix_ReturnsByteCount()
     {
         // Given a lowercase 0x prefix
-        var input = "0x00103d75";
+        var input = "0x00000200";
 
         // When parsed
         var result = NvrFile.ParseFileLength(input);
 
         // Then the value is the same regardless of case
-        await Assert.That(result).IsEqualTo(1_064_309L);
+        await Assert.That(result).IsEqualTo(524_288L);
     }
 
     [Test]
     public async Task ParseFileLength_PlainDecimalString_ReturnsValue()
     {
-        // Given a plain decimal string (some firmware variants omit the hex prefix)
-        var input = "1064309";
+        // Given a plain decimal block count (some firmware variants omit the hex prefix)
+        var input = "512";
 
         // When parsed
         var result = NvrFile.ParseFileLength(input);
 
-        // Then the decimal value is returned directly
-        await Assert.That(result).IsEqualTo(1_064_309L);
+        // Then the block count is converted to bytes (512 * 1024 = 524288)
+        await Assert.That(result).IsEqualTo(524_288L);
     }
 
     [Test]
@@ -159,14 +159,13 @@ public class NvrFileTests
     [Test]
     public async Task FileLengthMB_KnownNvrFileSize_MatchesExpected()
     {
-        // Given the file length from the spec (0x00103D75 = 1 064 309 bytes ≈ 1.015 MB)
-        var file = new NvrFile { FileLengthBytes = 1_064_309 };
+        // Given 512 blocks (0x200) = 524288 bytes ≈ 0.5 MB
+        var file = new NvrFile { FileLengthBytes = 524_288 };
 
         // When converted to MB
         var mb = file.FileLengthMB;
 
-        // Then the value is approximately 1.015
-        await Assert.That(mb).IsGreaterThan(1.01);
-        await Assert.That(mb).IsLessThan(1.02);
+        // Then the value is 0.5 MiB
+        await Assert.That(mb).IsEqualTo(0.5);
     }
 }
