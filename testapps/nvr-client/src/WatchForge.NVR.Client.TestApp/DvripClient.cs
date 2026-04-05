@@ -243,7 +243,7 @@ public sealed class DvripClient : IDisposable
 
         if (proc.ExitCode == 0 && File.Exists(mkvPath))
         {
-            File.Delete(rawPath);
+            File.Move(rawPath, Path.ChangeExtension(rawPath, ".raw"), overwrite: true);
             return mkvPath;
         }
 
