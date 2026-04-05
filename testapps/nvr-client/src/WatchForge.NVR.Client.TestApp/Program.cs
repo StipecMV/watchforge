@@ -43,7 +43,9 @@ using (var queryClient = new DvripClient(host, port, username, password))
 
     foreach (var ch in channels)
     {
-        var files = await queryClient.QueryFilesAsync(from, to, ch);
+        var files = (await queryClient.QueryFilesAsync(from, to, ch))
+            .Where(f => f.BeginTime >= from)   // NVR returns overlap-based results; exclude files that start before our window
+            .ToList();
         Console.WriteLine($"   Channel {ch}: {files.Count} file(s)");
         if (files.Count > 0)
             filesByChannel[ch] = files.DistinctBy(f => f.FileName).OrderBy(f => f.BeginTime).ToList();
@@ -95,8 +97,10 @@ var channelTasks = filesByChannel.Select(async kv =>
     for (int i = 0; i < files.Count; i++)
     {
         var file     = files[i];
-        var nvrName  = Regex.Replace(Path.GetFileName(file.FileName), @"\[[^\d][^\]]*\]", "");
-        var destName = $"{file.BeginTime:yyyy-MM-dd}_{nvrName}";
+        var nvrBase  = Path.GetFileNameWithoutExtension(file.FileName);
+        var nvrExt   = Path.GetExtension(file.FileName);
+        var cleanName = Regex.Replace(nvrBase, @"\[[^\]]*\]", "");
+        var destName = $"[Ch{ch}]_{file.BeginTime:yyyy-MM-dd}_{cleanName}{nvrExt}";
         var destPath = Path.Combine(downloadDir, destName);
 
         lock (consoleLock)
