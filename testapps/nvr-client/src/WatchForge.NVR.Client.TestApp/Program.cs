@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-Console.WriteLine("WatchForge DVRIP File Downloader");
+Console.WriteLine("🔧 WatchForge DVRIP File Downloader");
 Console.WriteLine("====================================");
 Console.WriteLine();
 
@@ -28,18 +28,18 @@ Directory.CreateDirectory(downloadDir);
 // ── 1. Query phase (sequential, single connection) ────────────────────────────
 var filesByChannel = new Dictionary<int, List<NvrFile>>();
 
-Console.WriteLine($"Connecting to {host}:{port} ...");
+Console.WriteLine($"🔌 Connecting to {host}:{port} ...");
 using (var queryClient = new DvripClient(host, port, username, password))
 {
     var login = await queryClient.LoginAsync();
-    Console.WriteLine("Login OK");
+    Console.WriteLine("✅ Login OK");
     Console.WriteLine($"   Device type  : {login.DeviceType}");
     Console.WriteLine($"   Channels     : {login.ChannelNum}");
     Console.WriteLine($"   Session ID   : {login.SessionIdHex}");
     Console.WriteLine($"   Keep-alive   : {login.AliveInterval}s");
     Console.WriteLine();
 
-    Console.WriteLine($"Querying channels {channels[0]}-{channels[^1]}  {from:yyyy-MM-dd HH:mm:ss} -> {to:HH:mm:ss}");
+    Console.WriteLine($"🔍 Querying channels {channels[0]}-{channels[^1]}  {from:yyyy-MM-dd HH:mm:ss} -> {to:HH:mm:ss}");
 
     foreach (var ch in channels)
     {
@@ -56,14 +56,14 @@ var totalFiles = filesByChannel.Values.Sum(f => f.Count);
 
 if (totalFiles == 0)
 {
-    Console.WriteLine("(no files in the given period)");
+    Console.WriteLine("📭 No files found in the given period.");
     Console.WriteLine();
     Console.WriteLine("====================================");
-    Console.WriteLine("Done!");
+    Console.WriteLine("✅ Done!");
     return;
 }
 
-Console.WriteLine($"Found {totalFiles} file(s) across {filesByChannel.Count} channel(s):");
+Console.WriteLine($"📂 Found {totalFiles} file(s) across {filesByChannel.Count} channel(s):");
 foreach (var (ch, files) in filesByChannel.OrderBy(kv => kv.Key))
 {
     foreach (var f in files)
@@ -71,14 +71,14 @@ foreach (var (ch, files) in filesByChannel.OrderBy(kv => kv.Key))
         var size = f.FileLengthMB >= 1.0
             ? $"{f.FileLengthMB:F1} MB"
             : $"{f.FileLengthBytes / 1024.0:F1} KB";
-        Console.WriteLine($"   [Ch{ch}] {Path.GetFileName(f.FileName)}  {f.BeginTime:HH:mm:ss}-{f.EndTime:HH:mm:ss}  [{size}]");
+        Console.WriteLine($"   📹 [Ch{ch}] {Path.GetFileName(f.FileName)}  {f.BeginTime:HH:mm:ss}-{f.EndTime:HH:mm:ss}  [{size}]");
     }
 }
 Console.WriteLine();
 
 // ── 2. Download phase (parallel per channel) ───────────────────────────────────
-Console.WriteLine($"Downloading {totalFiles} file(s) to {downloadDir}");
-Console.WriteLine($"({filesByChannel.Count} channel(s) in parallel)");
+Console.WriteLine($"📥 Downloading {totalFiles} file(s) to {downloadDir}");
+Console.WriteLine($"   ({filesByChannel.Count} channel(s) in parallel)");
 Console.WriteLine();
 
 var consoleLock = new object();
@@ -99,7 +99,7 @@ var channelTasks = filesByChannel.Select(async kv =>
         var destPath = Path.Combine(downloadDir, destName);
 
         lock (consoleLock)
-            Console.WriteLine($"   [Ch{ch} {i + 1}/{files.Count}] {destName}  ({file.FileLengthMB:F1} MB)");
+            Console.WriteLine($"   ⬇️  [Ch{ch} {i + 1}/{files.Count}] {destName}  ({file.FileLengthMB:F1} MB)");
 
         long lastReported = 0;
         var progress = new Progress<long>(bytes =>
@@ -119,15 +119,15 @@ var channelTasks = filesByChannel.Select(async kv =>
             var outputPath = await client.DownloadFileAsync(file, destPath, progress);
             lock (consoleLock)
             {
-                Console.WriteLine($"      [Ch{ch}] Done -> {Path.GetFileName(outputPath)}");
-                Console.WriteLine($"      [Ch{ch}] Preview: ffplay \"{outputPath}\"");
+                Console.WriteLine($"      ✅ [Ch{ch}] Done -> {Path.GetFileName(outputPath)}");
+                Console.WriteLine($"      🎬 [Ch{ch}] Preview: ffplay \"{outputPath}\"");
             }
             Interlocked.Increment(ref succeeded);
         }
         catch (Exception ex)
         {
             lock (consoleLock)
-                Console.WriteLine($"      [Ch{ch}] Failed: {ex.Message}");
+                Console.WriteLine($"      ❌ [Ch{ch}] Failed: {ex.Message}");
             Interlocked.Increment(ref failed);
         }
     }
@@ -137,4 +137,6 @@ await Task.WhenAll(channelTasks);
 
 Console.WriteLine();
 Console.WriteLine("====================================");
-Console.WriteLine($"Done!  {succeeded} downloaded, {failed} failed.");
+Console.WriteLine(failed == 0
+    ? $"✅ Done!  {succeeded} downloaded."
+    : $"⚠️  Done!  {succeeded} downloaded, {failed} failed.");
