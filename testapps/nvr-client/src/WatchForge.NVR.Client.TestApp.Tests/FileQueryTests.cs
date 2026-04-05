@@ -70,12 +70,12 @@ public class FileQueryTests
     [Test]
     public async Task ParseFileQueryResponse_KnownNvrResponse_HexFileLengthParsedToBytes()
     {
-        // Given FileLength "0x00103D75"
+        // Given FileLength "0x00103D75" = 1064309 1024-byte blocks
         var files = DvripClient.ParseFileQueryResponse(KnownNvrResponse);
 
         // When FileLengthBytes is read
-        // Then it equals 1 064 309 bytes
-        await Assert.That(files[0].FileLengthBytes).IsEqualTo(1_064_309L);
+        // Then it equals 1064309 * 1024 bytes
+        await Assert.That(files[0].FileLengthBytes).IsEqualTo(1_064_309L * 1024);
     }
 
     [Test]

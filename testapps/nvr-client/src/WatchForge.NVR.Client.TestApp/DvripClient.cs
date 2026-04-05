@@ -7,10 +7,11 @@ namespace WatchForge.NVR.Client.TestApp;
 public sealed class DvripClient : IDisposable
 {
     // ── Message IDs ───────────────────────────────────────────────────────────
-    private const ushort MsgLoginRequest     = 1000; // LOGIN_REQ
-    private const ushort MsgFileQueryRequest = 1440; // FILESEARCH_REQ (confirmed via sofiactl)
-    private const ushort MsgPlayClaimRequest = 1420; // PLAY_REQ — initiates file download
-    private const ushort MsgDownloadData     = 1426; // DOWNLOAD_DATA — stream packets from NVR
+    private const ushort MsgLoginRequest     = 1000;
+    private const ushort MsgFileQueryRequest = 1440;  // FILESEARCH_REQ (confirmed)
+    private const ushort MsgPlayBackRequest  = 1420;  // PLAY_REQ / DownloadStart
+    private const ushort MsgPlayClaimRequest = 1424;  // PLAY_CLAIM (Perl: PLAY_CLAIM=1424 for Claim step)
+    private const ushort MsgDownloadData     = 1426;  // DOWNLOAD_DATA (confirmed)
 
     private readonly string _host;
     private readonly int _port;
@@ -94,9 +95,9 @@ public sealed class DvripClient : IDisposable
                 BeginTime      = from.ToString("yyyy-MM-dd HH:mm:ss"),
                 EndTime        = to.ToString("yyyy-MM-dd HH:mm:ss"),
                 Channel        = channel,
-                Type           = "*",
+                DriverTypeMask = "0x0000FFFF",
                 Event          = "*",
-                DriverTypeMask = "0x0000FFFF"
+                Type           = "*"
             },
             SessionID = $"0x{_sessionId:X8}",
             Magic     = "0x1234"
@@ -108,123 +109,158 @@ public sealed class DvripClient : IDisposable
     }
 
     /// <summary>
-    /// Downloads a recorded file and converts it to MKV.
+    /// Downloads a recorded file, converts it to MKV via ffmpeg, and returns the output path.
     ///
-    /// Protocol (confirmed via sofiactl):
-    ///   1. The NVR closes the TCP connection after each download, so a fresh
-    ///      TCP connection and login are opened for every file.
-    ///   2. Send PLAY_REQ (1420) with OPPlayBack Claim + FileName → NVR responds Ret 100.
-    ///   3. NVR streams data as DVRIP packets with message ID 1426 (DOWNLOAD_DATA).
-    ///   4. Loop terminates when total bytes written >= FileLengthBytes. Connection
-    ///      close is not used as the termination signal.
-    ///   5. Raw file is converted to MKV via ffmpeg (-f hevc handles Xiongmai NALU
-    ///      headers), then the raw file is deleted.
-    ///
-    /// <paramref name="destinationPath"/> is the path for the raw download.
-    /// The final .mkv is written to the same path with a .mkv extension.
+    /// Confirmed download flow (tested against Movols/Xiongmai NVR):
+    ///   1. Fresh TCP connection + re-login (required per file)
+    ///   2. OPPlayBack Claim  (msgID 1424 → response 1425)
+    ///   3. OPPlayBack DownloadStart (msgID 1420) — NVR responds immediately with 1426 data
+    ///   4. Read DOWNLOAD_DATA packets (msgID 1426) until FileLengthBytes received
+    ///   5. ffmpeg conversion: raw HEVC stream → MKV
     /// </summary>
-    public async Task DownloadFileAsync(
+    public async Task<string> DownloadFileAsync(
         NvrFile file, string destinationPath,
         IProgress<long>? progress = null, CancellationToken ct = default)
     {
-        // ── Fresh connection + login ──────────────────────────────────────────
-        using var dlTcp = new TcpClient();
-        await dlTcp.ConnectAsync(_host, _port, ct);
-        var dlStream = dlTcp.GetStream();
-        uint dlSeq = 0;
+        // Fresh connection + re-login required for each file download
+        await ReconnectAsync(ct);
 
-        var loginJson = JsonSerializer.Serialize(new
-        {
-            EncryptType = "None",
-            LoginType   = "DVRIP",
-            PassWord    = _password,
-            UserName    = _username
-        });
-        var loginPkt = DvripPacket.Build(0, dlSeq++, MsgLoginRequest, Encoding.UTF8.GetBytes(loginJson + "\0"));
-        await dlStream.WriteAsync(loginPkt, ct);
-
-        var loginHeader = new byte[DvripPacket.HeaderSize];
-        await ReadExactAsync(dlStream, loginHeader, ct);
-        var loginResp = await DvripPacket.ReadFromStreamAsync(dlStream, loginHeader, ct);
-
-        using var loginDoc = JsonDocument.Parse(Encoding.UTF8.GetString(loginResp.Payload).TrimEnd('\0'));
-        var loginRet = GetNvrProp(loginDoc.RootElement, "Ret").GetInt32();
-        if (loginRet != 100)
-            throw new InvalidOperationException($"Download login failed — NVR returned code {loginRet}.");
-
-        var dlSession = Convert.ToUInt32(GetNvrProp(loginDoc.RootElement, "SessionID").GetString() ?? "0x0", 16);
-
-        // ── Claim (PLAY_REQ 1420) ─────────────────────────────────────────────
+        // Step 1: Claim
         var claimJson = JsonSerializer.Serialize(new
         {
             Name       = "OPPlayBack",
             OPPlayBack = new
             {
                 Action    = "Claim",
+                StartTime = file.BeginTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                EndTime   = file.EndTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 Parameter = new
                 {
-                    PlayMode  = "ByName",
                     FileName  = file.FileName,
+                    PlayMode  = "ByName",
                     TransMode = "TCP",
                     Value     = 0
                 }
             },
-            SessionID = $"0x{dlSession:X8}"
+            SessionID = $"0x{_sessionId:X8}"
         });
-        var claimPkt = DvripPacket.Build(dlSession, dlSeq++, MsgPlayClaimRequest, Encoding.UTF8.GetBytes(claimJson + "\0"));
-        await dlStream.WriteAsync(claimPkt, ct);
 
-        var claimHeader = new byte[DvripPacket.HeaderSize];
-        await ReadExactAsync(dlStream, claimHeader, ct);
-        var claimResp = await DvripPacket.ReadFromStreamAsync(dlStream, claimHeader, ct);
+        var claimResp = await SendAndReceiveAsync(MsgPlayClaimRequest, claimJson, ct);
+        var claimRespJson = Encoding.UTF8.GetString(claimResp.Payload).TrimEnd('\0');
+        using (var claimDoc = JsonDocument.Parse(claimRespJson))
+        {
+            var ret = GetNvrProp(claimDoc.RootElement, "Ret").GetInt32();
+            if (ret != 100)
+                throw new InvalidOperationException($"OPPlayBack Claim failed — NVR returned code {ret}");
+        }
 
-        using var claimDoc = JsonDocument.Parse(Encoding.UTF8.GetString(claimResp.Payload).TrimEnd('\0'));
-        var claimRet = GetNvrProp(claimDoc.RootElement, "Ret").GetInt32();
-        if (claimRet != 100)
-            throw new InvalidOperationException($"OPPlayBack Claim failed — NVR returned code {claimRet}.");
+        // Step 2: DownloadStart
+        var startJson = JsonSerializer.Serialize(new
+        {
+            Name       = "OPPlayBack",
+            OPPlayBack = new
+            {
+                Action    = "DownloadStart",
+                StartTime = file.BeginTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                EndTime   = file.EndTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                Parameter = new
+                {
+                    FileName  = file.FileName,
+                    PlayMode  = "ByName",
+                    TransMode = "TCP",
+                    Value     = 0
+                }
+            },
+            SessionID = $"0x{_sessionId:X8}"
+        });
 
-        // ── Read DOWNLOAD_DATA (1426) packets until FileLengthBytes received ──
+        // Step 3: Send DownloadStart — the NVR responds immediately with 1426 data packets.
+        // Do NOT await a JSON response; fire the command and go straight into the read loop.
+        var startPayload = Encoding.UTF8.GetBytes(startJson + "\0");
+        var startPacket  = DvripPacket.Build(_sessionId, _seqNum++, MsgPlayBackRequest, startPayload);
+        await _stream!.WriteAsync(startPacket, ct);
+
+        // Step 4: Read DOWNLOAD_DATA packets (msgID 1426) until FileLengthBytes received.
+        // NVR naturally closes stream or sends non-1426 when done (Ret 103 is normal).
         await using (var fileStream = File.OpenWrite(destinationPath))
         {
             long bytesWritten = 0;
             while (bytesWritten < file.FileLengthBytes && !ct.IsCancellationRequested)
             {
-                var pktHeader = new byte[DvripPacket.HeaderSize];
-                try { await ReadExactAsync(dlStream, pktHeader, ct); }
-                catch (EndOfStreamException) { break; } // safety — normal exit is FileLengthBytes
+                DvripPacket pkt;
+                try { pkt = await ReceivePacketAsync(ct); }
+                catch (EndOfStreamException) { break; }
 
-                var pkt = await DvripPacket.ReadFromStreamAsync(dlStream, pktHeader, ct);
-                if (pkt.MessageId != MsgDownloadData) break; // safety
+                if (pkt.MessageId != MsgDownloadData || pkt.Payload.Length == 0)
+                    break;
 
-                if (pkt.Payload.Length > 0)
-                {
-                    await fileStream.WriteAsync(pkt.Payload, ct);
-                    bytesWritten += pkt.Payload.Length;
-                    progress?.Report(bytesWritten);
-                }
+                await fileStream.WriteAsync(pkt.Payload, ct);
+                bytesWritten += pkt.Payload.Length;
+                progress?.Report(bytesWritten);
             }
         }
 
-        // ── Convert raw to MKV via ffmpeg ─────────────────────────────────────
-        // -f hevc: tells ffmpeg to treat input as raw HEVC bitstream,
-        // which correctly handles the Xiongmai NALU headers without re-encoding.
-        var mkvPath = Path.ChangeExtension(destinationPath, ".mkv");
-        var psi = new ProcessStartInfo
+        // Step 5: Convert raw DVRIP/HEVC stream to MKV
+        return await ConvertToMkvAsync(destinationPath, ct);
+    }
+
+    // ── Private connection helpers ────────────────────────────────────────────
+
+    private async Task ReconnectAsync(CancellationToken ct)
+    {
+        _stream?.Dispose();
+        _tcp?.Dispose();
+        _stream = null;
+        _tcp = null;
+        await LoginAsync(ct);
+    }
+
+    // ── Private ffmpeg helpers ────────────────────────────────────────────────
+
+    private static async Task<string> ConvertToMkvAsync(string rawPath, CancellationToken ct)
+    {
+        var mkvPath = Path.ChangeExtension(rawPath, ".mkv");
+
+        var ffmpegExe = FindExecutable("ffmpeg");
+        if (ffmpegExe is null)
         {
-            FileName               = "ffmpeg",
-            Arguments              = $"-y -f hevc -i \"{destinationPath}\" -c copy \"{mkvPath}\"",
-            RedirectStandardError  = true,
-            UseShellExecute        = false
-        };
-        var ffmpeg = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start ffmpeg.");
-        await ffmpeg.WaitForExitAsync(ct);
-        if (ffmpeg.ExitCode != 0)
-        {
-            var stderr = await ffmpeg.StandardError.ReadToEndAsync(ct);
-            throw new InvalidOperationException($"ffmpeg exited with code {ffmpeg.ExitCode}: {stderr.Trim()}");
+            Console.WriteLine("         ⚠️  ffmpeg not found — keeping raw file");
+            return rawPath;
         }
 
-        File.Delete(destinationPath);
+        var psi = new ProcessStartInfo(ffmpegExe)
+        {
+            Arguments             = $"-y -f hevc -i \"{rawPath}\" -c:v copy -c:a aac \"{mkvPath}\"",
+            RedirectStandardError = true,
+            UseShellExecute       = false,
+            CreateNoWindow        = true
+        };
+
+        using var proc = Process.Start(psi)
+            ?? throw new InvalidOperationException("Failed to start ffmpeg");
+
+        await proc.WaitForExitAsync(ct);
+
+        if (proc.ExitCode == 0 && File.Exists(mkvPath))
+        {
+            File.Delete(rawPath);
+            return mkvPath;
+        }
+
+        Console.WriteLine($"         ⚠️  ffmpeg exited with code {proc.ExitCode} — keeping raw file");
+        return rawPath;
+    }
+
+    private static string? FindExecutable(string name)
+    {
+        var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
+        foreach (var dir in paths)
+        {
+            var candidate = Path.Combine(dir, name);
+            if (File.Exists(candidate)) return candidate;
+            if (File.Exists(candidate + ".exe")) return candidate + ".exe";
+        }
+        return null;
     }
 
     // ── Public static helpers (also used by unit tests) ───────────────────────

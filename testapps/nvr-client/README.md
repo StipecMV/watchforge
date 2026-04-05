@@ -1,22 +1,12 @@
 # WatchForge NVR Client — DVRIP File Downloader
 
-A .NET 10 console test app for connecting to **Xiongmai/Sofia-based NVR devices** (tested on Movols brand) using the native **DVRIP** protocol. Lists and downloads recorded H.264 files over raw TCP.
+A .NET 10 console test app for connecting to **Xiongmai/Sofia-based NVR devices** (tested on Movols brand) using the native **DVRIP** protocol. Logs in, lists recorded files across multiple channels, downloads them, and converts to MKV via ffmpeg.
 
 ## What Is DVRIP and Why Not ONVIF?
 
 **DVRIP** (DVR Internet Protocol, also called NetSDK or Sofia protocol) is the proprietary binary TCP protocol used by Xiongmai-based NVR/DVR firmware (brand name: Sofia). It runs on port 34567 by default.
 
 Although the NVR advertises partial ONVIF support, in practice the Movols/Xiongmai ONVIF implementation does not expose the Recording Search service, making it impossible to enumerate or download recordings through ONVIF alone. DVRIP provides full access to the file system, live streams, and recorded files.
-
-## NVR Details
-
-| Field        | Value              |
-|--------------|--------------------|
-| Brand        | Movols (OEM Xiongmai, Sofia firmware) |
-| Host         | 192.168.68.58      |
-| DVRIP port   | 34567              |
-| Device type  | HVR                |
-| Channels     | 9 (6 active)       |
 
 ## Project Structure
 
@@ -31,7 +21,7 @@ testapps/nvr-client/
     │   │   ├── LoginResult.cs
     │   │   └── NvrFile.cs
     │   └── appsettings.json
-    └── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit + Moq)
+    └── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit)
         ├── NvrFileTests.cs
         ├── SofiaPasswordTests.cs
         ├── DvripPacketTests.cs
@@ -45,13 +35,16 @@ Edit `appsettings.json` in `WatchForge.NVR.Client.TestApp/`:
 ```json
 {
   "Dvrip": {
-    "Host": "192.168.68.58",
+    "Host": "your_nvr_ip_address",
     "Port": 34567,
     "Username": "your_username",
-    "Password": "your_password"
+    "Password": "your_password",
+    "DownloadDir": "your_download_folder"
   }
 }
 ```
+
+The app also has a hardcoded query window (`from`/`to`) and channel list in `Program.cs` — edit those to target the desired time range and cameras.
 
 ## How to Run
 
@@ -66,11 +59,13 @@ Or from the repo root:
 dotnet run --project testapps/nvr-client/src/WatchForge.NVR.Client.TestApp
 ```
 
+ffmpeg must be on `PATH` for automatic MKV conversion after download. If not found, the raw stream file is kept instead.
+
 ## How to Run Tests
 
 ```bash
 # All tests in this sub-project
-dotnet test testapps/nvr-client/src/WatchForge.NVR.Client.TestApp.Tests
+dotnet run --project testapps/nvr-client/src/WatchForge.NVR.Client.TestApp.Tests
 
 # All tests in the solution
 dotnet test --solution WatchForge.slnx
@@ -82,31 +77,78 @@ dotnet test --solution WatchForge.slnx
 🔧 WatchForge DVRIP File Downloader
 ====================================
 
-🔌 Connecting to 192.168.68.58:34567 ...
+🔌 Connecting to your_nvr_ip_address:34567 ...
 ✅ Login OK
    Device type  : HVR
    Channels     : 9
    Session ID   : 0x0000001B
    Keep-alive   : 21s
 
-🔍 Querying files  2026-03-27 → 2026-04-03 14:22:10
+🔍 Querying channels 0–5  2026-04-05 15:30:00 → 15:45:00
 
-📂 Found 12 file(s):
-   📹 /idea0/2026-04-02/002/10.08.02-10.30.00[R][@8600f][1].h264
-       2026-04-02 10:08:02 → 10:30:00  [1.0 MB]
+   Channel 0: 1 file(s)
+   Channel 1: 1 file(s)
    ...
 
-⬇️  Downloading: 10.08.02-10.30.00[R][@8600f][1].h264
-   Destination : /home/user/10.08.02-10.30.00[R][@8600f][1].h264
-   Expected    : 1.0 MB
-   Progress    : 1.0 MB / 1.0 MB (100%)
-✅ Download complete → /home/user/10.08.02-10.30.00[R][@8600f][1].h264
+📂 Found 6 file(s) across all channels:
+   📹 /idea0/2026-04-05/002/15.30.00-15.45.00[R][@da7ed][1].h264
+       2026-04-05 15:30:00 → 15:45:00  [502.3 MB]
+   ...
+
+⬇️  Downloading 6 file(s) → your_download_folder
+
+   [1/6] 15.30.00-15.45.00[R][@da7ed][1].h264  (502.3 MB)
+         Downloading 502.3 MB of 502.3 MB (100%)
+         ✅ your_download_folder/15.30.00-15.45.00[R][@da7ed][1].mkv
+         Preview: ffplay "your_download_folder/15.30.00-15.45.00[R][@da7ed][1].mkv"
 
 ====================================
-✅ Done!
+✅ Done!  6 downloaded, 0 failed.
 ```
 
-## Known NVR Quirk — Malformed Datetime in FileQuery Response
+## DVRIP Protocol Notes
+
+### Confirmed message IDs (Movols HVR, Sofia firmware)
+
+| ID   | Direction | Purpose                        |
+|------|-----------|--------------------------------|
+| 1000 | Request   | Login                          |
+| 1001 | Response  | Login                          |
+| 1440 | Request   | OPFileQuery (file listing)     |
+| 1441 | Response  | OPFileQuery                    |
+| 1424 | Request   | OPPlayBack Claim               |
+| 1425 | Response  | OPPlayBack Claim               |
+| 1420 | Request   | OPPlayBack DownloadStart       |
+| 1426 | Data      | Download data packets          |
+
+### Confirmed download flow
+
+1. **Fresh TCP connection + re-login** — required for each file download
+2. **OPPlayBack Claim** (msgID 1424) — await JSON response, check `Ret == 100`
+3. **OPPlayBack DownloadStart** (msgID 1420) — fire-and-forget; the NVR immediately starts streaming binary data packets without a JSON handshake response
+4. **Read msgID 1426 data packets** until `FileLengthBytes` received or stream closes
+5. **ffmpeg conversion** — raw HEVC stream → MKV (`-f hevc -i raw -c:v copy -c:a aac output.mkv`)
+
+### Authentication
+
+This firmware rejects the standard Sofia MD5 hash (`EncryptType "MD5"`) with code 203. Plain-text credentials (`EncryptType "None"`) work correctly (returns code 100).
+
+### DVRIP Packet Format
+
+| Offset | Length | Field                        |
+|--------|--------|------------------------------|
+| 0      | 1      | Magic = 0xFF                 |
+| 1      | 1      | Version = 0x00               |
+| 2–3    | 2      | Reserved                     |
+| 4–7    | 4      | Session ID (uint32 LE)       |
+| 8–11   | 4      | Sequence number (uint32 LE)  |
+| 12     | 1      | Total packets                |
+| 13     | 1      | Current packet               |
+| 14–15  | 2      | Message ID (uint16 LE)       |
+| 16–19  | 4      | Payload length (uint32 LE)   |
+| 20+    | N      | JSON payload (UTF-8, null-terminated) |
+
+### Known NVR Quirk — Malformed Datetime in FileQuery Response
 
 The Movols/Sofia firmware emits datetime strings **without the space** between date and time in FileQuery responses:
 
@@ -115,33 +157,8 @@ Standard: "2026-04-02 10:08:02"
 NVR emits: "2026-04-0210:08:02"   ← no space
 ```
 
-`NvrFile.ParseNvrDateTime()` handles both formats. The DVRIP request uses the standard format with a space; only the response is malformed.
+`NvrFile.ParseNvrDateTime()` handles both formats. DVRIP requests use the standard format; only the NVR response is malformed.
 
-## DVRIP Packet Format
+### FileLength Units
 
-| Offset | Length | Field          |
-|--------|--------|----------------|
-| 0      | 1      | Magic = 0xFF   |
-| 1      | 1      | Version = 0x00 |
-| 2–3    | 2      | Reserved       |
-| 4–7    | 4      | Session ID (uint32 LE) |
-| 8–11   | 4      | Sequence number (uint32 LE) |
-| 12     | 1      | Total packets  |
-| 13     | 1      | Current packet |
-| 14–15  | 2      | Message ID (uint16 LE) |
-| 16–19  | 4      | Payload length (uint32 LE) |
-| 20+    | N      | JSON payload (UTF-8, null-terminated) |
-
-Key message IDs:
-
-| ID   | Direction | Purpose         |
-|------|-----------|-----------------|
-| 1000 | Request   | Login           |
-| 1001 | Response  | Login           |
-| 1442 | Request   | OPFileQuery     |
-| 1443 | Response  | OPFileQuery     |
-| 1466 | Request   | OPPlayBack (download — see TODO in DvripClient.cs) |
-
-## Download Status
-
-File listing is fully implemented. File download is best-effort: the OPPlayBack message ID and post-handshake stream framing vary by firmware version. See the `TODO` block in [DvripClient.cs](src/WatchForge.NVR.Client.TestApp/DvripClient.cs) for details.
+The `FileLength` field in OPFileQuery responses is in **1024-byte blocks**, not bytes. `NvrFile.ParseFileLength()` multiplies the parsed value by 1024.
