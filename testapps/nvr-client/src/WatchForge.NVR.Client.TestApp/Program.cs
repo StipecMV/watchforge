@@ -95,7 +95,8 @@ var channelTasks = filesByChannel.Select(async kv =>
     for (int i = 0; i < files.Count; i++)
     {
         var file     = files[i];
-        var destName = Path.GetFileName(file.FileName);
+        var nvrName  = Regex.Replace(Path.GetFileName(file.FileName), @"\[[^\d][^\]]*\]", "");
+        var destName = $"{file.BeginTime:yyyy-MM-dd}_{nvrName}";
         var destPath = Path.Combine(downloadDir, destName);
 
         lock (consoleLock)
