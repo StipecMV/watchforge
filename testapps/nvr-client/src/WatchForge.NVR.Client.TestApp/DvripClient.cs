@@ -7,17 +7,10 @@ namespace WatchForge.NVR.Client.TestApp;
 public sealed class DvripClient : IDisposable
 {
     // ── Message IDs ───────────────────────────────────────────────────────────
-    private const ushort MsgLoginRequest     = 1000;
-    private const ushort MsgFileQueryRequest = 1442;
-
-    // TODO: The OPPlayBack message ID for Sofia/Xiongmai firmware is not definitively
-    // documented in public specifications. The candidates are:
-    //   1466 (0x5BA) — most commonly cited in open-source DVRIP implementations
-    //   1426 (0x592) — used in some firmware variants for monitor/playback
-    //   1546 (0x60A) — cited in Xiongmai SDK documentation for some device types
-    // This implementation uses 1466 as the primary candidate. If download fails,
-    // try the other values for your specific firmware version.
-    private const ushort MsgPlayBackRequest  = 1466;
+    private const ushort MsgLoginRequest     = 1000; // LOGIN_REQ
+    private const ushort MsgFileQueryRequest = 1440; // FILESEARCH_REQ (confirmed via sofiactl)
+    private const ushort MsgPlayClaimRequest = 1420; // PLAY_REQ — initiates file download
+    private const ushort MsgDownloadData     = 1426; // DOWNLOAD_DATA — stream packets from NVR
 
     private readonly string _host;
     private readonly int _port;
@@ -91,15 +84,19 @@ public sealed class DvripClient : IDisposable
     public async Task<List<NvrFile>> QueryFilesAsync(
         DateTime from, DateTime to, int channel = 0, CancellationToken ct = default)
     {
+        // Type "*" returns all recordings regardless of codec (NVR records H.265, not H.264).
+        // Event "*" and DriverTypeMask "0x0000FFFF" are required by this firmware.
         var queryJson = JsonSerializer.Serialize(new
         {
             Name        = "OPFileQuery",
             OPFileQuery = new
             {
-                BeginTime = from.ToString("yyyy-MM-dd HH:mm:ss"),
-                EndTime   = to.ToString("yyyy-MM-dd HH:mm:ss"),
-                Channel   = channel,
-                Types     = new[] { "h264" }
+                BeginTime      = from.ToString("yyyy-MM-dd HH:mm:ss"),
+                EndTime        = to.ToString("yyyy-MM-dd HH:mm:ss"),
+                Channel        = channel,
+                Type           = "*",
+                Event          = "*",
+                DriverTypeMask = "0x0000FFFF"
             },
             SessionID = $"0x{_sessionId:X8}",
             Magic     = "0x1234"
@@ -111,30 +108,59 @@ public sealed class DvripClient : IDisposable
     }
 
     /// <summary>
-    /// Attempts to download a recorded file to <paramref name="destinationPath"/>.
+    /// Downloads a recorded file and converts it to MKV.
     ///
-    /// NOTE: The DVRIP file download protocol for Sofia/Xiongmai firmware is not
-    /// definitively documented. This implementation sends OPPlayBack Start
-    /// (message ID 1466) and reads the resulting data stream as DVRIP packets,
-    /// writing their payloads to disk.
+    /// Protocol (confirmed via sofiactl):
+    ///   1. The NVR closes the TCP connection after each download, so a fresh
+    ///      TCP connection and login are opened for every file.
+    ///   2. Send PLAY_REQ (1420) with OPPlayBack Claim + FileName → NVR responds Ret 100.
+    ///   3. NVR streams data as DVRIP packets with message ID 1426 (DOWNLOAD_DATA).
+    ///   4. Loop terminates when total bytes written >= FileLengthBytes. Connection
+    ///      close is not used as the termination signal.
+    ///   5. Raw file is converted to MKV via ffmpeg (-f hevc handles Xiongmai NALU
+    ///      headers), then the raw file is deleted.
     ///
-    /// Known unknowns:
-    ///   • The correct OPPlayBack message ID may be 1426, 1466, or 1546 depending on firmware.
-    ///   • After the Start handshake the NVR may wrap AV data in DVRIP packets (message ID ~508)
-    ///     or emit a proprietary frame format with its own inner header.
-    ///   • If the downloaded file does not play back, the inner frame header may need to be
-    ///     stripped. Inspect with a hex editor: valid H.264 streams begin with 0x00 0x00 0x00 0x01.
+    /// <paramref name="destinationPath"/> is the path for the raw download.
+    /// The final .mkv is written to the same path with a .mkv extension.
     /// </summary>
     public async Task DownloadFileAsync(
         NvrFile file, string destinationPath,
         IProgress<long>? progress = null, CancellationToken ct = default)
     {
-        var startJson = JsonSerializer.Serialize(new
+        // ── Fresh connection + login ──────────────────────────────────────────
+        using var dlTcp = new TcpClient();
+        await dlTcp.ConnectAsync(_host, _port, ct);
+        var dlStream = dlTcp.GetStream();
+        uint dlSeq = 0;
+
+        var loginJson = JsonSerializer.Serialize(new
         {
-            Name        = "OPPlayBack",
-            OPPlayBack  = new
+            EncryptType = "None",
+            LoginType   = "DVRIP",
+            PassWord    = _password,
+            UserName    = _username
+        });
+        var loginPkt = DvripPacket.Build(0, dlSeq++, MsgLoginRequest, Encoding.UTF8.GetBytes(loginJson + "\0"));
+        await dlStream.WriteAsync(loginPkt, ct);
+
+        var loginHeader = new byte[DvripPacket.HeaderSize];
+        await ReadExactAsync(dlStream, loginHeader, ct);
+        var loginResp = await DvripPacket.ReadFromStreamAsync(dlStream, loginHeader, ct);
+
+        using var loginDoc = JsonDocument.Parse(Encoding.UTF8.GetString(loginResp.Payload).TrimEnd('\0'));
+        var loginRet = GetNvrProp(loginDoc.RootElement, "Ret").GetInt32();
+        if (loginRet != 100)
+            throw new InvalidOperationException($"Download login failed — NVR returned code {loginRet}.");
+
+        var dlSession = Convert.ToUInt32(GetNvrProp(loginDoc.RootElement, "SessionID").GetString() ?? "0x0", 16);
+
+        // ── Claim (PLAY_REQ 1420) ─────────────────────────────────────────────
+        var claimJson = JsonSerializer.Serialize(new
+        {
+            Name       = "OPPlayBack",
+            OPPlayBack = new
             {
-                Action    = "Start",
+                Action    = "Claim",
                 Parameter = new
                 {
                     PlayMode  = "ByName",
@@ -143,48 +169,62 @@ public sealed class DvripClient : IDisposable
                     Value     = 0
                 }
             },
-            SessionID = $"0x{_sessionId:X8}"
+            SessionID = $"0x{dlSession:X8}"
         });
+        var claimPkt = DvripPacket.Build(dlSession, dlSeq++, MsgPlayClaimRequest, Encoding.UTF8.GetBytes(claimJson + "\0"));
+        await dlStream.WriteAsync(claimPkt, ct);
 
-        var response = await SendAndReceiveAsync(MsgPlayBackRequest, startJson, ct);
-        var json = Encoding.UTF8.GetString(response.Payload).TrimEnd('\0');
+        var claimHeader = new byte[DvripPacket.HeaderSize];
+        await ReadExactAsync(dlStream, claimHeader, ct);
+        var claimResp = await DvripPacket.ReadFromStreamAsync(dlStream, claimHeader, ct);
 
-        using var doc = JsonDocument.Parse(json);
-        var ret = GetNvrProp(doc.RootElement, "Ret").GetInt32();
-        if (ret != 100)
-            throw new InvalidOperationException(
-                $"OPPlayBack Start failed — NVR returned code {ret}. " +
-                $"Tried message ID {MsgPlayBackRequest}. See TODO in DvripClient.cs.");
+        using var claimDoc = JsonDocument.Parse(Encoding.UTF8.GetString(claimResp.Payload).TrimEnd('\0'));
+        var claimRet = GetNvrProp(claimDoc.RootElement, "Ret").GetInt32();
+        if (claimRet != 100)
+            throw new InvalidOperationException($"OPPlayBack Claim failed — NVR returned code {claimRet}.");
 
-        await using var fileStream = File.OpenWrite(destinationPath);
-        long bytesWritten = 0;
-
-        while (bytesWritten < file.FileLengthBytes && !ct.IsCancellationRequested)
+        // ── Read DOWNLOAD_DATA (1426) packets until FileLengthBytes received ──
+        await using (var fileStream = File.OpenWrite(destinationPath))
         {
-            DvripPacket pkt;
-            try { pkt = await ReceivePacketAsync(ct); }
-            catch (EndOfStreamException) { break; }
-
-            if (pkt.Payload.Length > 0)
+            long bytesWritten = 0;
+            while (bytesWritten < file.FileLengthBytes && !ct.IsCancellationRequested)
             {
-                await fileStream.WriteAsync(pkt.Payload, ct);
-                bytesWritten += pkt.Payload.Length;
-                progress?.Report(bytesWritten);
+                var pktHeader = new byte[DvripPacket.HeaderSize];
+                try { await ReadExactAsync(dlStream, pktHeader, ct); }
+                catch (EndOfStreamException) { break; } // safety — normal exit is FileLengthBytes
+
+                var pkt = await DvripPacket.ReadFromStreamAsync(dlStream, pktHeader, ct);
+                if (pkt.MessageId != MsgDownloadData) break; // safety
+
+                if (pkt.Payload.Length > 0)
+                {
+                    await fileStream.WriteAsync(pkt.Payload, ct);
+                    bytesWritten += pkt.Payload.Length;
+                    progress?.Report(bytesWritten);
+                }
             }
         }
 
-        // Best-effort Stop — ignore errors since the file data is already received
-        try
+        // ── Convert raw to MKV via ffmpeg ─────────────────────────────────────
+        // -f hevc: tells ffmpeg to treat input as raw HEVC bitstream,
+        // which correctly handles the Xiongmai NALU headers without re-encoding.
+        var mkvPath = Path.ChangeExtension(destinationPath, ".mkv");
+        var psi = new ProcessStartInfo
         {
-            var stopJson = JsonSerializer.Serialize(new
-            {
-                Name       = "OPPlayBack",
-                OPPlayBack = new { Action = "Stop" },
-                SessionID  = $"0x{_sessionId:X8}"
-            });
-            await SendAndReceiveAsync(MsgPlayBackRequest, stopJson, ct);
+            FileName               = "ffmpeg",
+            Arguments              = $"-y -f hevc -i \"{destinationPath}\" -c copy \"{mkvPath}\"",
+            RedirectStandardError  = true,
+            UseShellExecute        = false
+        };
+        var ffmpeg = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start ffmpeg.");
+        await ffmpeg.WaitForExitAsync(ct);
+        if (ffmpeg.ExitCode != 0)
+        {
+            var stderr = await ffmpeg.StandardError.ReadToEndAsync(ct);
+            throw new InvalidOperationException($"ffmpeg exited with code {ffmpeg.ExitCode}: {stderr.Trim()}");
         }
-        catch { /* intentionally swallowed */ }
+
+        File.Delete(destinationPath);
     }
 
     // ── Public static helpers (also used by unit tests) ───────────────────────

@@ -103,7 +103,7 @@ try
         {
             await client.DownloadFileAsync(file, destPath, progress);
             Console.WriteLine();
-            Console.WriteLine($"         ✅ {destPath}");
+            Console.WriteLine($"         ✅ {Path.ChangeExtension(destPath, ".mkv")}");
             succeeded++;
         }
         catch (Exception ex)
