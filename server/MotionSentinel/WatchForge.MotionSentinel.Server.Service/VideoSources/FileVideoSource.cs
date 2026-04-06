@@ -11,9 +11,6 @@ public sealed class FileVideoSource : IVideoSource
     private readonly VideoCapture _capture;
 
     /// <inheritdoc/>
-    public long  DurationMs { get; }
-
-    /// <inheritdoc/>
     public int   Width      { get; }
 
     /// <inheritdoc/>
@@ -38,8 +35,6 @@ public sealed class FileVideoSource : IVideoSource
         Width     = (int)_capture.Get(VideoCaptureProperties.FrameWidth);
         Height    = (int)_capture.Get(VideoCaptureProperties.FrameHeight);
 
-        long frameCount = (long)_capture.Get(VideoCaptureProperties.FrameCount);
-        DurationMs = fps > 0 ? (long)(frameCount * 1000.0 / fps) : 0;
     }
 
     /// <inheritdoc/>

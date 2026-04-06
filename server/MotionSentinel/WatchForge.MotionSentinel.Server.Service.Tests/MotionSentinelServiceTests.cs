@@ -30,7 +30,7 @@ public sealed class MotionSentinelServiceTests
     }
 
     [Test]
-    public async Task StartingAsync_ThrowsDirectoryNotFoundException_WhenRecordingsPathMissing()
+    public async Task StartingAsync_ThrowsDirectoryNotFoundException_WhenWatchDirectoryMissing()
     {
         // Given
         var (orchestrator, _) = BuildOrchestrator();
@@ -38,8 +38,8 @@ public sealed class MotionSentinelServiceTests
             orchestrator,
             Options.Create(new LocalFileServiceOptions
             {
-                RecordingsPath = "/nonexistent/path",
-                DetectionsPath = "/tmp/det",
+                WatchDirectory = "/nonexistent/path",
+                OutputDirectory = "/tmp/det",
             }));
 
         // When / Then
@@ -61,8 +61,8 @@ public sealed class MotionSentinelServiceTests
             orchestrator,
             Options.Create(new LocalFileServiceOptions
             {
-                RecordingsPath = recDir,
-                DetectionsPath = detDir,
+                WatchDirectory = recDir,
+                OutputDirectory = detDir,
             }));
 
         // When

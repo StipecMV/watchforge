@@ -16,8 +16,9 @@ public sealed class LocalFileServiceTests
 
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = recDir,
-            DetectionsPath = detDir,
+            WatchDirectory  = recDir,
+            OutputDirectory = detDir,
+            FileExtensions  = ["*.mp4"],
         }));
 
         // When
@@ -40,8 +41,8 @@ public sealed class LocalFileServiceTests
 
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = recDir,
-            DetectionsPath = detDir,
+            WatchDirectory = recDir,
+            OutputDirectory = detDir,
         }));
 
         // When
@@ -59,8 +60,8 @@ public sealed class LocalFileServiceTests
         // Given
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = "/mnt/nvr/recordings",
-            DetectionsPath = "/mnt/nvr/detections",
+            WatchDirectory = "/mnt/nvr/recordings",
+            OutputDirectory = "/mnt/nvr/detections",
         }));
 
         // When
@@ -81,8 +82,8 @@ public sealed class LocalFileServiceTests
 
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = recDir,
-            DetectionsPath = detDir,
+            WatchDirectory = recDir,
+            OutputDirectory = detDir,
         }));
 
         await Assert.That(service.DetectionExists("cam1_08-00.mp4")).IsTrue();
@@ -99,8 +100,8 @@ public sealed class LocalFileServiceTests
 
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = recDir,
-            DetectionsPath = detDir,
+            WatchDirectory = recDir,
+            OutputDirectory = detDir,
         }));
 
         await Assert.That(service.DetectionExists("cam1_08-15.mp4")).IsFalse();
@@ -115,8 +116,8 @@ public sealed class LocalFileServiceTests
     {
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = "/mnt/nvr/recordings",
-            DetectionsPath = "/mnt/nvr/detections",
+            WatchDirectory = "/mnt/nvr/recordings",
+            OutputDirectory = "/mnt/nvr/detections",
         }));
 
         await Assert.ThrowsAsync<ArgumentException>(
@@ -132,8 +133,8 @@ public sealed class LocalFileServiceTests
     {
         var service = new LocalFileService(Options.Create(new LocalFileServiceOptions
         {
-            RecordingsPath = "/mnt/nvr/recordings",
-            DetectionsPath = "/mnt/nvr/detections",
+            WatchDirectory = "/mnt/nvr/recordings",
+            OutputDirectory = "/mnt/nvr/detections",
         }));
 
         await Assert.ThrowsAsync<ArgumentException>(

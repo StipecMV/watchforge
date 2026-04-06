@@ -175,7 +175,6 @@ public sealed class MotionAnalysisOrchestratorTests
         var videoSrc = new Mock<IVideoSource>();
         videoSrc.Setup(v => v.GetFramesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerable.Empty<VideoFrame>());
-        videoSrc.Setup(v => v.DurationMs).Returns(120_000L);
         videoSrc.Setup(v => v.Width).Returns(1920);
         videoSrc.Setup(v => v.Height).Returns(1080);
         videoSrc.Setup(v => v.FrameRate).Returns(25.0f);
@@ -190,7 +189,6 @@ public sealed class MotionAnalysisOrchestratorTests
         // Then
         var result = JsonSerializer.Deserialize<DetectionResult>(capturedJson!,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-        await Assert.That(result.Metadata.DurationMs).IsEqualTo(120_000L);
         await Assert.That(result.Metadata.Width).IsEqualTo(1920);
         await Assert.That(result.Metadata.Height).IsEqualTo(1080);
         await Assert.That(result.Metadata.FrameRate).IsEqualTo(25.0f);
