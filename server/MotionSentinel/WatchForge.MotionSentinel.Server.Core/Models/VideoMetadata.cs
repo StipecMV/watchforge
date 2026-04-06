@@ -3,9 +3,6 @@ namespace WatchForge.MotionSentinel.Server.Core.Models;
 /// <summary>Technical metadata extracted from the source video file.</summary>
 public sealed record VideoMetadata
 {
-    /// <summary>Total duration of the video in milliseconds.</summary>
-    public long DurationMs { get; init; }
-
     /// <summary>Frame width in pixels.</summary>
     public int Width { get; init; }
 

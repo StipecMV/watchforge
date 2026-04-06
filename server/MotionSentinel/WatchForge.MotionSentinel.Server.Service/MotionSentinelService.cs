@@ -24,7 +24,7 @@ public sealed class MotionSentinelService : IHostedLifecycleService
     // Tracks filenames currently queued or running to prevent duplicate analysis
     private readonly ConcurrentDictionary<string, byte> _inFlight = new(StringComparer.OrdinalIgnoreCase);
 
-    private FileSystemWatcher? _watcher;
+    private readonly List<FileSystemWatcher> _watchers = [];
     private CancellationTokenSource _cts = new();
 
     public MotionSentinelService(
@@ -39,12 +39,13 @@ public sealed class MotionSentinelService : IHostedLifecycleService
     public Task StartingAsync(CancellationToken ct)
     {
         Log.Info("MotionSentinel starting.");
-        Log.Info($"Recordings : {_fileOptions.RecordingsPath}");
-        Log.Info($"Detections : {_fileOptions.DetectionsPath}");
+        Log.Info($"Watch      : {_fileOptions.WatchDirectory}");
+        Log.Info($"Output     : {_fileOptions.OutputDirectory}");
+        Log.Info($"Extensions : {string.Join(", ", _fileOptions.FileExtensions)}");
 
-        if (!Directory.Exists(_fileOptions.RecordingsPath))
+        if (!Directory.Exists(_fileOptions.WatchDirectory))
             throw new DirectoryNotFoundException(
-                $"RecordingsPath not found: {_fileOptions.RecordingsPath}");
+                $"WatchDirectory not found: {_fileOptions.WatchDirectory}");
 
         return Task.CompletedTask;
     }
@@ -56,20 +57,24 @@ public sealed class MotionSentinelService : IHostedLifecycleService
         await _orchestrator.RunBackfillAsync(_cts.Token);
     }
 
-    /// <summary>Called after <see cref="StartAsync"/> — activates the <see cref="FileSystemWatcher"/> to process new recordings in real time.</summary>
+    /// <summary>Called after <see cref="StartAsync"/> — activates one <see cref="FileSystemWatcher"/> per configured extension to process new recordings in real time.</summary>
     public Task StartedAsync(CancellationToken ct)
     {
-        _watcher = new FileSystemWatcher(_fileOptions.RecordingsPath, "*.mp4")
+        foreach (var ext in _fileOptions.FileExtensions)
         {
-            NotifyFilter          = NotifyFilters.FileName | NotifyFilters.Size,
-            IncludeSubdirectories = false,
-            EnableRaisingEvents   = true,
-        };
+            var watcher = new FileSystemWatcher(_fileOptions.WatchDirectory, ext)
+            {
+                NotifyFilter          = NotifyFilters.FileName | NotifyFilters.Size,
+                IncludeSubdirectories = false,
+                EnableRaisingEvents   = true,
+            };
 
-        _watcher.Created += OnFileCreated;
-        _watcher.Renamed += OnFileRenamed;
+            watcher.Created += OnFileCreated;
+            watcher.Renamed += OnFileRenamed;
+            _watchers.Add(watcher);
+        }
 
-        Log.Info("FileSystemWatcher active — waiting for new recordings...");
+        Log.Info($"FileSystemWatcher active ({_watchers.Count} filter(s)) — waiting for new recordings...");
         return Task.CompletedTask;
     }
 
@@ -78,8 +83,8 @@ public sealed class MotionSentinelService : IHostedLifecycleService
     {
         Log.Info("MotionSentinel stopping — draining in-flight analysis...");
 
-        if (_watcher is not null)
-            _watcher.EnableRaisingEvents = false;
+        foreach (var watcher in _watchers)
+            watcher.EnableRaisingEvents = false;
 
         await _cts.CancelAsync();
 
@@ -95,7 +100,9 @@ public sealed class MotionSentinelService : IHostedLifecycleService
     public Task StoppedAsync(CancellationToken ct)
     {
         Log.Info("MotionSentinel stopped.");
-        _watcher?.Dispose();
+        foreach (var watcher in _watchers)
+            watcher.Dispose();
+        _watchers.Clear();
         return Task.CompletedTask;
     }
 

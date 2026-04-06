@@ -14,7 +14,7 @@ Log4NetConfigurator.Configure(logDir);
 
 // Configuration bindings
 builder.Services.Configure<LocalFileServiceOptions>(
-    builder.Configuration.GetSection("Files"));
+    builder.Configuration.GetSection("MotionSentinel"));
 
 builder.Services.Configure<DetectionOptions>(
     builder.Configuration.GetSection("Detection"));

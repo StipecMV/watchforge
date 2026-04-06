@@ -120,7 +120,6 @@ public sealed class MotionAnalysisOrchestrator
             AppVersion = _appInfo.Version,
             Metadata   = new VideoMetadata
             {
-                DurationMs          = source.DurationMs,
                 Width               = source.Width,
                 Height              = source.Height,
                 FrameRate           = source.FrameRate,

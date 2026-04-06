@@ -15,14 +15,15 @@ public sealed class LocalFileService : IFileAccessService
     /// <inheritdoc/>
     public Task<IReadOnlyList<string>> ListNewRecordingsAsync(CancellationToken ct = default)
     {
-        var recordings = Directory
-            .EnumerateFiles(_options.RecordingsPath, "*.mp4")
+        var recordings = _options.FileExtensions
+            .SelectMany(ext => Directory.EnumerateFiles(_options.WatchDirectory, ext))
             .Select(Path.GetFileName)
             .OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var analyzed = Directory
-            .EnumerateFiles(_options.DetectionsPath, "*.json")
+            .EnumerateFiles(_options.OutputDirectory, "*.json")
             .Select(f => Path.GetFileNameWithoutExtension(f))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -46,24 +47,24 @@ public sealed class LocalFileService : IFileAccessService
         if (fileName.Contains("..") || fileName.Contains('/') || fileName.Contains('\\'))
             throw new ArgumentException("Path traversal is not allowed.", nameof(fileName));
 
-        return Path.Combine(_options.RecordingsPath, fileName);
+        return Path.Combine(_options.WatchDirectory, fileName);
     }
 
     /// <inheritdoc/>
     public bool DetectionExists(string fileName)
     {
         var jsonName = Path.GetFileNameWithoutExtension(fileName) + ".json";
-        return File.Exists(Path.Combine(_options.DetectionsPath, jsonName));
+        return File.Exists(Path.Combine(_options.OutputDirectory, jsonName));
     }
 
     /// <inheritdoc/>
     public async Task WriteDetectionAsync(
         string jsonContent, string videoFileName, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(_options.DetectionsPath);
+        Directory.CreateDirectory(_options.OutputDirectory);
 
         var jsonName   = Path.GetFileNameWithoutExtension(videoFileName) + ".json";
-        var outputPath = Path.Combine(_options.DetectionsPath, jsonName);
+        var outputPath = Path.Combine(_options.OutputDirectory, jsonName);
 
         await File.WriteAllTextAsync(outputPath, jsonContent, ct);
     }

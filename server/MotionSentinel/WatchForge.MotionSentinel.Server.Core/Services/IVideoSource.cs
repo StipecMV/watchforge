@@ -7,9 +7,6 @@ namespace WatchForge.MotionSentinel.Server.Core.Services;
 /// </summary>
 public interface IVideoSource : IDisposable
 {
-    /// <summary>Total duration of the video in milliseconds.</summary>
-    long DurationMs { get; }
-
     /// <summary>Frame width in pixels.</summary>
     int Width { get; }
 
