@@ -1,3 +1,28 @@
-<div class="timeline-container">
-  <canvas #canvas class="timeline-canvas"></canvas>
+<div class="timeline-wrap">
+  <!-- Zoom buttons -->
+  <div class="zoom-controls">
+    <button class="zoom-btn" (click)="zoomIn()" title="Zoom in">+</button>
+    <button class="zoom-btn" (click)="zoomOut()" title="Zoom out">−</button>
+    <button class="zoom-btn reset-btn" (click)="resetZoom()" title="Reset zoom" *ngIf="isZoomed">↔</button>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap">
+    <canvas #canvas class="timeline-canvas"
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp($event)"
+      (mouseleave)="onMouseUp($event)"
+      (click)="onClick($event)"
+    ></canvas>
+  </div>
+
+  <!-- Horizontal scrollbar (only visible when zoomed) -->
+  <div class="scrollbar-track" *ngIf="isZoomed" (click)="onScrollbarClick($event)">
+    <div class="scrollbar-thumb"
+      [style.left.%]="thumbLeft"
+      [style.width.%]="thumbWidth"
+      (mousedown)="onThumbDown($event)"
+    ></div>
+  </div>
 </div>
