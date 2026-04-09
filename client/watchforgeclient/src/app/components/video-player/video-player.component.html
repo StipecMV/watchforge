@@ -37,13 +37,16 @@
 
   <!-- Controls -->
   <div class="controls">
-    <button class="play-btn" (click)="togglePlay()">
+    <button class="play-btn" (click)="togglePlay()" [disabled]="!isReady">
       {{ isPlaying ? '⏸' : '▶' }}
     </button>
     <div class="time-display">
       {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
     </div>
     <div class="video-title">{{ video.channelId }} · {{ video.date }} {{ video.startTime }}</div>
+    <div class="conv-badge" [ngClass]="convBadgeClass" [title]="convBadgeTitle">
+      {{ convBadgeText }}
+    </div>
   </div>
 
   <!-- Timeline -->

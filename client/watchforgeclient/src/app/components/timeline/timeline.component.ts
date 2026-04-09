@@ -30,6 +30,8 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngAfterViewInit() {
     this.resizeObserver = new ResizeObserver(() => this.draw());
     this.resizeObserver.observe(this.canvas);
+    // Must be passive:false so we can preventDefault and stop page scroll
+    this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
     this.draw();
   }
 
@@ -45,6 +47,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngOnDestroy() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
     this.resizeObserver?.disconnect();
+    this.canvas.removeEventListener('wheel', this.handleWheel);
   }
 
   private get canvas(): HTMLCanvasElement {
@@ -163,8 +166,8 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.seek.emit(Math.max(0, Math.min(this.duration, t)));
   }
 
-  @HostListener('wheel', ['$event'])
-  onWheel(e: WheelEvent) {
+  // Arrow function so 'this' is preserved when used as event listener
+  private readonly handleWheel = (e: WheelEvent) => {
     e.preventDefault();
     if (this.duration <= 0) return;
 
@@ -173,19 +176,19 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
     const pivot = this.xToTime(x);
 
     const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
-    const window = this.zoomEnd - this.zoomStart;
-    let newWindow = Math.max(0.5, Math.min(this.duration, window * factor));
+    const visibleWindow = this.zoomEnd - this.zoomStart;
+    const newWindow = Math.max(0.5, Math.min(this.duration, visibleWindow * factor));
 
-    // Keep pivot point fixed
-    const leftRatio = (pivot - this.zoomStart) / window;
+    // Keep pivot point fixed under cursor
+    const leftRatio = (pivot - this.zoomStart) / visibleWindow;
     this.zoomStart = pivot - leftRatio * newWindow;
     this.zoomEnd = this.zoomStart + newWindow;
 
-    // Clamp
+    // Clamp to [0, duration]
     if (this.zoomStart < 0) { this.zoomEnd -= this.zoomStart; this.zoomStart = 0; }
     if (this.zoomEnd > this.duration) { this.zoomStart -= this.zoomEnd - this.duration; this.zoomEnd = this.duration; }
     this.zoomStart = Math.max(0, this.zoomStart);
 
     this.draw();
-  }
+  };
 }

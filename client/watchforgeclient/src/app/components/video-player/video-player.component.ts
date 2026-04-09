@@ -2,7 +2,7 @@ import {
   Component, ElementRef, Input, OnChanges, OnDestroy,
   SimpleChanges, ViewChild
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ConversionStatus, DetectionEvent, DetectionsFile, VideoItem } from '../../models/video.model';
@@ -11,7 +11,7 @@ import { TimelineComponent } from '../timeline/timeline.component';
 @Component({
   selector: 'app-video-player',
   standalone: true,
-  imports: [CommonModule, TimelineComponent],
+  imports: [CommonModule, NgClass, TimelineComponent],
   templateUrl: './video-player.component.html',
   styleUrls: ['./video-player.component.css']
 })
@@ -207,6 +207,35 @@ export class VideoPlayerComponent implements OnChanges, OnDestroy {
 
   get conversionError(): boolean {
     return this.conversionStatus?.status === 'error';
+  }
+
+  get isReady(): boolean {
+    return this.duration > 0;
+  }
+
+  get convBadgeText(): string {
+    const s = this.conversionStatus?.status;
+    if (s === 'ready' || this.video?.hasCachedH264) return '✓ MP4';
+    if (s === 'converting') return `⚙ ${this.conversionProgress}%`;
+    if (s === 'not_started') return '⚙ queued';
+    if (s === 'error') return '⚠ failed';
+    return 'MKV';
+  }
+
+  get convBadgeTitle(): string {
+    const s = this.conversionStatus?.status;
+    if (s === 'ready' || this.video?.hasCachedH264) return 'H.264 MP4 cached';
+    if (s === 'converting') return `Converting to H.264: ${this.conversionProgress}%`;
+    if (s === 'error') return 'Conversion failed';
+    return 'Original MKV (H.265)';
+  }
+
+  get convBadgeClass(): string {
+    const s = this.conversionStatus?.status;
+    if (s === 'ready' || this.video?.hasCachedH264) return 'badge-ready';
+    if (s === 'converting' || s === 'not_started') return 'badge-converting';
+    if (s === 'error') return 'badge-error';
+    return 'badge-mkv';
   }
 
   formatTime(secs: number): string {
