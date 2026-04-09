@@ -1,0 +1,15 @@
+<div class="app-shell">
+  <app-sidebar
+    [channels]="channels"
+    [selectedVideoId]="selectedVideo?.id ?? null"
+    (videoSelected)="onVideoSelected($event)"
+  ></app-sidebar>
+
+  <main class="main-content">
+    <div *ngIf="loadError" class="error-banner">
+      ⚠️ Cannot connect to WatchForge server at localhost:5000.
+      <button (click)="loadVideos()">Retry</button>
+    </div>
+    <app-video-player [video]="selectedVideo"></app-video-player>
+  </main>
+</div>

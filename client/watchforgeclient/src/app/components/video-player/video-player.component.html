@@ -1,0 +1,63 @@
+<div class="player-container" *ngIf="video; else noVideo">
+
+  <!-- Conversion overlay -->
+  <div class="conversion-overlay" *ngIf="isConverting">
+    <div class="conversion-box">
+      <div class="conversion-icon">⚙️</div>
+      <div class="conversion-label">Converting to H.264…</div>
+      <div class="conversion-bar-wrap">
+        <div class="conversion-bar" [style.width.%]="conversionProgress"></div>
+      </div>
+      <div class="conversion-pct">{{ conversionProgress }}%</div>
+    </div>
+  </div>
+
+  <!-- Error overlay -->
+  <div class="conversion-overlay" *ngIf="conversionError">
+    <div class="conversion-box">
+      <div class="conversion-icon">⚠️</div>
+      <div class="conversion-label">Conversion failed</div>
+    </div>
+  </div>
+
+  <!-- Video + canvas overlay -->
+  <div class="video-wrap">
+    <video
+      #videoEl
+      class="video-el"
+      (loadedmetadata)="onVideoMetadata()"
+      (timeupdate)="onTimeUpdate()"
+      (play)="onPlay()"
+      (pause)="onPause()"
+      (ended)="onEnded()"
+      preload="metadata"
+    ></video>
+    <canvas #overlayCanvas class="overlay-canvas"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="play-btn" (click)="togglePlay()">
+      {{ isPlaying ? '⏸' : '▶' }}
+    </button>
+    <div class="time-display">
+      {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+    </div>
+    <div class="video-title">{{ video.channelId }} · {{ video.date }} {{ video.startTime }}</div>
+  </div>
+
+  <!-- Timeline -->
+  <app-timeline
+    [duration]="duration"
+    [currentTime]="currentTime"
+    [events]="eventsForTimeline"
+    (seek)="seekTo($event)"
+  ></app-timeline>
+</div>
+
+<ng-template #noVideo>
+  <div class="no-video">
+    <div class="no-video-icon">📹</div>
+    <div>Select a video from the sidebar</div>
+  </div>
+</ng-template>

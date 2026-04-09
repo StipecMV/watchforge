@@ -1,0 +1,36 @@
+<div class="sidebar" [class.collapsed]="collapsed">
+  <div class="sidebar-header">
+    <span *ngIf="!collapsed" class="sidebar-title">WatchForge</span>
+    <button class="toggle-btn" (click)="toggleSidebar()" [title]="collapsed ? 'Expand' : 'Collapse'">
+      {{ collapsed ? '▶' : '◀' }}
+    </button>
+  </div>
+
+  <div class="sidebar-content" *ngIf="!collapsed">
+    <div *ngFor="let channel of channels" class="channel-group">
+      <div class="channel-header" (click)="toggleChannel(channel.channelId)">
+        <span class="channel-arrow">{{ isExpanded(channel.channelId) ? '▼' : '▶' }}</span>
+        <span class="channel-name">{{ channel.channelId }}</span>
+        <span class="channel-count">({{ channel.videos.length }})</span>
+      </div>
+      <div class="video-list" *ngIf="isExpanded(channel.channelId)">
+        <div
+          *ngFor="let video of channel.videos"
+          class="video-item"
+          [class.active]="video.id === selectedVideoId"
+          (click)="selectVideo(video)"
+        >
+          <div class="video-time">{{ video.startTime }}–{{ video.endTime }}</div>
+          <div class="video-date">{{ video.date }}</div>
+          <div class="video-badges">
+            <span *ngIf="video.hasCachedH264" class="badge badge-ready" title="H.264 cached">MP4</span>
+            <span *ngIf="video.hasDetections" class="badge badge-detect" title="Has detections">MOT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="channels.length === 0" class="empty-state">
+      No videos found
+    </div>
+  </div>
+</div>

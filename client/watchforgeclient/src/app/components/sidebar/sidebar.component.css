@@ -1,0 +1,150 @@
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #1a1a1a;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: width 0.2s ease, min-width 0.2s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 8px;
+  border-bottom: 1px solid #333;
+  min-height: 48px;
+}
+
+.sidebar-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.toggle-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.toggle-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.channel-header:hover {
+  background: #252525;
+  color: #fff;
+}
+
+.channel-arrow {
+  font-size: 9px;
+  color: #666;
+}
+
+.channel-name {
+  flex: 1;
+}
+
+.channel-count {
+  font-size: 11px;
+  color: #666;
+  font-weight: normal;
+}
+
+.video-list {
+  padding-left: 0;
+}
+
+.video-item {
+  padding: 7px 12px 7px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid #222;
+  transition: background 0.1s;
+}
+
+.video-item:hover {
+  background: #252525;
+}
+
+.video-item.active {
+  background: #1e3a5f;
+  border-left: 3px solid #4a9eff;
+}
+
+.video-time {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ddd;
+}
+
+.video-date {
+  font-size: 11px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.video-badges {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.badge-ready {
+  background: #1a4a1a;
+  color: #5d5;
+  border: 1px solid #2a6a2a;
+}
+
+.badge-detect {
+  background: #4a1a1a;
+  color: #f55;
+  border: 1px solid #6a2a2a;
+}
+
+.empty-state {
+  padding: 20px 12px;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
