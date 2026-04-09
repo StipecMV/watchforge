@@ -1,5 +1,5 @@
 import {
-  Component, ElementRef, EventEmitter, HostListener,
+  AfterViewInit, Component, ElementRef, EventEmitter, HostListener,
   Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,8 +12,9 @@ import { DetectionEvent } from '../../models/video.model';
   templateUrl: './timeline.component.html',
   styleUrls: ['./timeline.component.css']
 })
-export class TimelineComponent implements OnChanges, OnDestroy {
+export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  private resizeObserver?: ResizeObserver;
 
   @Input() duration = 0;       // total video duration in seconds
   @Input() currentTime = 0;    // current playback time in seconds
@@ -26,6 +27,12 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   private dragging = false;
   private animFrameId = 0;
 
+  ngAfterViewInit() {
+    this.resizeObserver = new ResizeObserver(() => this.draw());
+    this.resizeObserver.observe(this.canvas);
+    this.draw();
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['duration'] && this.duration > 0) {
       this.zoomStart = 0;
@@ -37,6 +44,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+    this.resizeObserver?.disconnect();
   }
 
   private get canvas(): HTMLCanvasElement {

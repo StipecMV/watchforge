@@ -140,12 +140,24 @@ export class VideoPlayerComponent implements OnChanges, OnDestroy {
     if (vid) vid.currentTime = time;
   }
 
+  /** Returns the actual rendered video rect (object-fit: contain) */
+  private videoRenderRect(vid: HTMLVideoElement): { w: number; h: number } {
+    const cW = vid.clientWidth;
+    const cH = vid.clientHeight;
+    const vW = vid.videoWidth || cW;
+    const vH = vid.videoHeight || cH;
+    if (!vW || !vH) return { w: cW, h: cH };
+    const scale = Math.min(cW / vW, cH / vH);
+    return { w: Math.round(vW * scale), h: Math.round(vH * scale) };
+  }
+
   private resizeOverlayCanvas() {
     const canvas = this.overlayCanvas?.nativeElement;
     const vid = this.videoEl?.nativeElement;
     if (!canvas || !vid) return;
-    canvas.width = vid.clientWidth || 640;
-    canvas.height = vid.clientHeight || 360;
+    const { w, h } = this.videoRenderRect(vid);
+    canvas.width = w || 640;
+    canvas.height = h || 360;
   }
 
   private drawOverlay() {
@@ -154,8 +166,9 @@ export class VideoPlayerComponent implements OnChanges, OnDestroy {
     const ctx = canvas.getContext('2d')!;
 
     const vid = this.videoEl.nativeElement;
-    canvas.width = vid.clientWidth;
-    canvas.height = vid.clientHeight;
+    const { w, h } = this.videoRenderRect(vid);
+    canvas.width = w;
+    canvas.height = h;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!this.detections?.events) return;
