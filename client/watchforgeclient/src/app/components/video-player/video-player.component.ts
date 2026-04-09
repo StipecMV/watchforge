@@ -174,9 +174,12 @@ export class VideoPlayerComponent implements OnChanges, OnDestroy {
     if (!this.detections?.events) return;
 
     const nowMs = this.currentTime * 1000;
-    const activeEvents = this.detections.events.filter(
-      ev => Math.abs(ev.timestampMs - nowMs) <= 250
-    );
+    const activeEvents = this.detections.events.filter(ev => {
+      const startMs = ev.timestampMs;
+      const endMs = startMs + (ev.durationMs ?? 500);
+      // Show if current time is within the event span (±100ms buffer)
+      return nowMs >= startMs - 100 && nowMs <= endMs + 100;
+    });
 
     ctx.strokeStyle = 'rgba(255, 50, 50, 0.9)';
     ctx.lineWidth = 2;

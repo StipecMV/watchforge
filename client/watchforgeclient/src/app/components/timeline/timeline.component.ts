@@ -234,15 +234,18 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
     ctx.fillStyle = '#2a2a2a';
     ctx.fillRect(0, trackY, w, trackH);
 
-    // Motion events (red segments)
+    // Motion events (red segments) — drawn as spans using durationMs
     ctx.fillStyle = 'rgba(220, 50, 50, 0.85)';
     const visWindow = this.zoomEnd - this.zoomStart;
-    const minSegW = Math.max(2, w / (visWindow * 10));
     for (const ev of this.events) {
-      const t = ev.timestampMs / 1000;
-      if (t < this.zoomStart || t > this.zoomEnd) continue;
-      const x = this.timeToX(t);
-      ctx.fillRect(x - minSegW / 2, trackY, minSegW, trackH);
+      const startT = ev.timestampMs / 1000;
+      const endT = startT + (ev.durationMs ?? 500) / 1000;
+      // Skip if completely outside the visible window
+      if (endT < this.zoomStart || startT > this.zoomEnd) continue;
+      const x1 = this.timeToX(Math.max(startT, this.zoomStart));
+      const x2 = this.timeToX(Math.min(endT, this.zoomEnd));
+      const segW = Math.max(2, x2 - x1);
+      ctx.fillRect(x1, trackY, segW, trackH);
     }
 
     // Tick marks & time labels

@@ -21,11 +21,13 @@ export interface ConversionStatus {
 
 export interface DetectionEvent {
   timestampMs: number;
+  durationMs: number;
   regions: Array<{
     x: number;
     y: number;
     width: number;
     height: number;
+    intensity?: number;
   }>;
 }
 
