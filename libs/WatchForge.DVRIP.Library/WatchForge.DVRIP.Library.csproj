@@ -4,8 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>WatchForge.DVRIP</RootNamespace>
-    <AssemblyName>WatchForge.DVRIP.Library</AssemblyName>
+    <RootNamespace>WatchForge.DVRIP.Library</RootNamespace>
   </PropertyGroup>
 
 </Project>

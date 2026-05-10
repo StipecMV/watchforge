@@ -1,4 +1,4 @@
-namespace WatchForge.DVRIP;
+namespace WatchForge.DVRIP.Library.Models;
 
 public sealed class LoginResult
 {

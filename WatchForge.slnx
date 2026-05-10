@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Solution>
-  <Project Path="libs/dvrip/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+  <Project Path="libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
   <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp.Tests/WatchForge.NVR.Client.TestApp.Tests.csproj" />
   <Project Path="libs/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />

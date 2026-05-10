@@ -1,6 +1,4 @@
-using System.Globalization;
-
-namespace WatchForge.DVRIP;
+namespace WatchForge.DVRIP.Library.Models;
 
 public sealed class NvrFile
 {

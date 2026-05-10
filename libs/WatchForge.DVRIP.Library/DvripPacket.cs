@@ -1,4 +1,4 @@
-namespace WatchForge.DVRIP;
+namespace WatchForge.DVRIP.Library;
 
 /// <summary>
 /// Represents a raw DVRIP (Sofia/Xiongmai) protocol packet.

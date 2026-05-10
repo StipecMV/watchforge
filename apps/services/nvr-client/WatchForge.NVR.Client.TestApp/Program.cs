@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 Console.WriteLine("🔧 WatchForge DVRIP File Downloader");
 Console.WriteLine("====================================");
 Console.WriteLine();

@@ -1,4 +1,4 @@
-namespace WatchForge.DVRIP;
+namespace WatchForge.DVRIP.Library;
 
 /// <summary>
 /// Minimal DVRIP client for Xiongmai/Sofia-based NVR devices (e.g. Movols brand).
