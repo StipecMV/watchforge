@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+    <ProjectReference Include="../../../../libs/dvrip/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   </ItemGroup>
 
 </Project>

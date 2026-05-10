@@ -13,24 +13,24 @@ Although the NVR advertises partial ONVIF support, in practice the Movols/Xiongm
 ## Project Structure
 
 ```
-testapps/nvr-client/
+apps/services/nvr-client/
 ├── Dockerfile
-└── src/
-    ├── WatchForge.DVRIP.Library/                # Reusable DVRIP protocol library
-    │   ├── DvripClient.cs                       # Login, file query, download, ffmpeg
-    │   ├── DvripPacket.cs                       # Packet build/parse
-    │   └── Models/
-    │       ├── LoginResult.cs
-    │       └── NvrFile.cs
-    ├── WatchForge.NVR.Client.TestApp/           # Console app (references Library)
-    │   ├── Program.cs                           # Entry point, oneshot + infinite modes
-    │   ├── DownloadStateService.cs              # Tracks downloaded files (downloaded.json)
-    │   └── appsettings.json
-    └── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit, references Library)
-        ├── NvrFileTests.cs
-        ├── SofiaPasswordTests.cs
-        ├── DvripPacketTests.cs
-        └── FileQueryTests.cs
+├── WatchForge.NVR.Client.TestApp/           # Console app (references DVRIP library)
+│   ├── Program.cs                           # Entry point, oneshot + infinite modes
+│   ├── DownloadStateService.cs              # Tracks downloaded files (downloaded.json)
+│   └── appsettings.json
+└── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit, references DVRIP library)
+    ├── NvrFileTests.cs
+    ├── SofiaPasswordTests.cs
+    ├── DvripPacketTests.cs
+    └── FileQueryTests.cs
+
+libs/dvrip/WatchForge.DVRIP.Library/         # Reusable DVRIP protocol library (NuGet)
+├── DvripClient.cs                           # Login, file query, download, ffmpeg
+├── DvripPacket.cs                           # Packet build/parse
+└── Models/
+    ├── LoginResult.cs
+    └── NvrFile.cs
 ```
 
 ## Configuration
@@ -73,7 +73,7 @@ Edit `appsettings.json` in `WatchForge.NVR.Client.TestApp/`:
 Queries the NVR for recordings in a specific time window (`StartTime` + `DurationMinutes`), downloads them, and exits.
 
 ```bash
-dotnet run --project src/WatchForge.NVR.Client.TestApp
+dotnet run --project WatchForge.NVR.Client.TestApp
 ```
 
 ### Infinite
@@ -82,7 +82,7 @@ Runs continuously. On each poll it queries the entire available NVR history, ski
 
 ```bash
 # appsettings.json: "Mode": "infinite"
-dotnet run --project src/WatchForge.NVR.Client.TestApp
+dotnet run --project WatchForge.NVR.Client.TestApp
 ```
 
 Press **Ctrl+C** to stop — current downloads finish cleanly before the process exits.
@@ -93,7 +93,7 @@ State is persisted in `{DownloadDir}/downloaded.json`. If the container restarts
 
 ```bash
 # All tests in this sub-project
-dotnet run --project src/WatchForge.NVR.Client.TestApp.Tests
+dotnet run --project WatchForge.NVR.Client.TestApp.Tests
 
 # All tests in the solution
 dotnet test WatchForge.slnx
@@ -104,7 +104,7 @@ dotnet test WatchForge.slnx
 ### Build the image
 
 ```bash
-cd testapps/nvr-client
+cd apps/services/nvr-client
 podman build -t watchforge-nvr-client .
 ```
 

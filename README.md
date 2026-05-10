@@ -11,20 +11,22 @@ WatchForge is a self-hosted video processing for NVR (Network Video Recorder) sy
 ```
 watchforge/
 ├── WatchForge.slnx              # Main .NET solution file
-├── testapps/                    # Test applications
-│   └── nvr-client/              # DVRIP file downloader for Xiongmai/Sofia NVR
-│       └── src/
+├── apps/
+│   ├── web/                     # Angular frontend
+│   ├── api/                     # REST API server (.NET)
+│   └── services/
+│       ├── motion-sentinel/     # Linux Worker Service — OpenCV motion detection
+│       │   ├── WatchForge.MotionSentinel.Server.Service/
+│       │   ├── WatchForge.MotionSentinel.Server.Core.Tests/
+│       │   └── WatchForge.MotionSentinel.Server.Service.Tests/
+│       └── nvr-client/          # DVRIP file downloader for Xiongmai/Sofia NVR
 │           ├── WatchForge.NVR.Client.TestApp/
 │           └── WatchForge.NVR.Client.TestApp.Tests/
-├── client/                      # Frontend client application
-├── db/
-│   └── queries/                 # Database schema and queries
-└── server/                      # Dotnet-based server components
-    └── MotionSentinel/          # Linux Worker Service — OpenCV motion detection
-        ├── WatchForge.MotionSentinel.Server.Core/
-        ├── WatchForge.MotionSentinel.Server.Core.Tests/
-        ├── WatchForge.MotionSentinel.Server.Service/
-        └── WatchForge.MotionSentinel.Server.Service.Tests/
+├── libs/
+│   ├── motion-sentinel/         # WatchForge.MotionSentinel.Server.Core (NuGet)
+│   └── dvrip/                   # WatchForge.DVRIP.Library (NuGet)
+└── db/
+    └── queries/                 # Database schema and queries
 ```
 
 ## ✨ Features
@@ -36,14 +38,14 @@ watchforge/
 - 🔌 Headless Worker Service — runs as a systemd unit, no UI required
 - 🧪 test coverage via TUnit + Moq
 
-See [server/MotionSentinel/README.md](server/MotionSentinel/README.md) for full docs.
+See [apps/services/motion-sentinel/README.md](apps/services/motion-sentinel/README.md) for full docs.
 
 ### NVR Client (.NET · Linux)
 - 📡 DVRIP protocol — native Xiongmai/Sofia TCP protocol (port 34567)
 - 🔐 Sofia MD5 login, file listing, best-effort H.264 file download
 - 🖥️ .NET 10, Linux (x64, arm64)
 - 🧪 test coverage via TUnit + Moq
-See [testapps/nvr-client/README.md](testapps/nvr-client/README.md) for full docs.
+See [apps/services/nvr-client/README.md](apps/services/nvr-client/README.md) for full docs.
 
 ## 🛠️ Tech Stack
 

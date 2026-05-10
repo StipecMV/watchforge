@@ -169,11 +169,11 @@ sequenceDiagram
 dotnet test --solution WatchForge.slnx
 
 # Or run MotionSentinel tests only
-dotnet test server/MotionSentinel/WatchForge.MotionSentinel.Server.Core.Tests/
-dotnet test server/MotionSentinel/WatchForge.MotionSentinel.Server.Service.Tests/
+dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/
+dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/
 
 # Publish framework-dependent (AnyCPU — runs on any Linux with .NET 10 runtime)
-dotnet publish server/MotionSentinel/WatchForge.MotionSentinel.Server.Service/ \
+dotnet publish apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/ \
   -c Release \
   -o ./publish
 ```
@@ -187,11 +187,11 @@ cross-compilation is required — build and deploy locally.
 ```bash
 # Collect coverage for all MotionSentinel test projects
 dotnet-coverage collect \
-  "dotnet test server/MotionSentinel/WatchForge.MotionSentinel.Server.Core.Tests/" \
+  "dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/" \
   -f xml -o coverage-core.xml
 
 dotnet-coverage collect \
-  "dotnet test server/MotionSentinel/WatchForge.MotionSentinel.Server.Service.Tests/" \
+  "dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/" \
   -f xml -o coverage-service.xml
 
 # Generate HTML report
@@ -346,4 +346,4 @@ This is enforced at two levels:
 
 ---
 
-*Part of [WatchForge](../../README.md) · `/server/MotionSentinel/` · .NET 10 · Linux · OpenCV · TUnit*
+*Part of [WatchForge](../../../README.md) · `/apps/services/motion-sentinel/` · .NET 10 · Linux · OpenCV · TUnit*
