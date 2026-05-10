@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Models;
+namespace WatchForge.MotionSentinel.Library.Models;
 
 /// <summary>
 /// A bounding box within a video frame where motion was detected.

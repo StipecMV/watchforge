@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 /// <summary>A single decoded video frame together with its playback position.</summary>
 /// <param name="NativeBuffer">The underlying native frame buffer (e.g. an OpenCV <c>Mat</c>). Disposed via <see cref="Dispose"/>.</param>

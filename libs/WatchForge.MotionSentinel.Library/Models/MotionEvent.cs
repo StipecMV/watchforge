@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Models;
+namespace WatchForge.MotionSentinel.Library.Models;
 
 /// <summary>A single interval in a recording during which motion was detected.</summary>
 public sealed record MotionEvent

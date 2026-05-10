@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\motion-sentinel\WatchForge.MotionSentinel.Server.Core\WatchForge.MotionSentinel.Server.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\libs\WatchForge.MotionSentinel.Library\WatchForge.MotionSentinel.Library.csproj" />
   </ItemGroup>
 
 </Project>

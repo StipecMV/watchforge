@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Models;
+namespace WatchForge.MotionSentinel.Library.Models;
 
 /// <summary>Technical metadata extracted from the source video file.</summary>
 public sealed record VideoMetadata

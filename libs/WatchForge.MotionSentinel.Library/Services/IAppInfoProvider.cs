@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 /// <summary>Exposes application metadata for embedding in detection output.</summary>
 public interface IAppInfoProvider

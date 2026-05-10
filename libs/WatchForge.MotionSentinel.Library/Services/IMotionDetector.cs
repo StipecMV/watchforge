@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 /// <summary>
 /// Analyses a sequence of video frames and returns the spatial regions where motion occurred.

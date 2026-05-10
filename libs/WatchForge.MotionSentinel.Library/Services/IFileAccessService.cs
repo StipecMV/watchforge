@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 public interface IFileAccessService
 {

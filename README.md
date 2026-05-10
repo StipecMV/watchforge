@@ -23,7 +23,7 @@ watchforge/
 │           ├── WatchForge.NVR.Client.TestApp/
 │           └── WatchForge.NVR.Client.TestApp.Tests/
 ├── libs/
-│   ├── motion-sentinel/         # WatchForge.MotionSentinel.Server.Core (NuGet)
+│   ├── WatchForge.MotionSentinel.Library/  # NuGet
 │   └── dvrip/                   # WatchForge.DVRIP.Library (NuGet)
 └── db/
     └── queries/                 # Database schema and queries

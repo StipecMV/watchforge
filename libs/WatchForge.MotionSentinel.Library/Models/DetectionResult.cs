@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Models;
+namespace WatchForge.MotionSentinel.Library.Models;
 
 /// <summary>Top-level output written as JSON for each analysed recording.</summary>
 public sealed record DetectionResult

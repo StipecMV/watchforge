@@ -10,7 +10,7 @@ Headless Linux background service that watches a local NVR recordings folder, an
 
 ```mermaid
 graph TD
-    subgraph Core ["WatchForge.MotionSentinel.Server.Core (class library)"]
+    subgraph Core ["WatchForge.MotionSentinel.Library (class library)"]
         MAO[MotionAnalysisOrchestrator]
         IFA[IFileAccessService]
         IVS[IVideoSource]

@@ -1,6 +1,4 @@
-using log4net;
-
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 /// <summary>
 /// Coordinates the full analysis pipeline: scan → analyse → write → cleanup.

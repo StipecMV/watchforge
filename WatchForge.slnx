@@ -3,7 +3,7 @@
   <Project Path="libs/dvrip/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
   <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp.Tests/WatchForge.NVR.Client.TestApp.Tests.csproj" />
-  <Project Path="libs/motion-sentinel/WatchForge.MotionSentinel.Server.Core/WatchForge.MotionSentinel.Server.Core.csproj" />
+  <Project Path="libs/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
   <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/WatchForge.MotionSentinel.Server.Service.csproj" />
   <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/WatchForge.MotionSentinel.Server.Core.Tests.csproj" />
   <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/WatchForge.MotionSentinel.Server.Service.Tests.csproj" />

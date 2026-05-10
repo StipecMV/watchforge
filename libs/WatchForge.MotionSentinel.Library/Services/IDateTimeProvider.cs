@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Services;
+namespace WatchForge.MotionSentinel.Library.Services;
 
 /// <summary>Abstracts the system clock to make time-dependent code testable.</summary>
 public interface IDateTimeProvider
