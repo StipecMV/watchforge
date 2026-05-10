@@ -5,5 +5,13 @@
 **/obj/
 
 global.json
-.claude/settings.json
+
+# Claude Code local data
+.claude/
+
+# Angular
+**/node_modules/
+**/dist/
+**/.angular/
+
 TestResults/*.html
