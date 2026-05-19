@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
-    <RootNamespace>WatchForge.MotionSentinel.Server.Service</RootNamespace>
+    <RootNamespace>WatchForge.MotionSentinel.Service</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\WatchForge.MotionSentinel.Library\WatchForge.MotionSentinel.Library.csproj" />
+    <ProjectReference Include="..\..\..\libs\WatchForge.MotionSentinel.Library\WatchForge.MotionSentinel.Library.csproj" />
   </ItemGroup>
 
 </Project>

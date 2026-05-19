@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.Infrastructure.Wrappers;
+namespace WatchForge.MotionSentinel.Service.Infrastructure.Wrappers;
 
 /// <summary>Production implementation of <see cref="IAppInfoProvider"/> that reads the entry-assembly version.</summary>
 public sealed class AssemblyAppInfoProvider : IAppInfoProvider

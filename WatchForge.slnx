@@ -4,7 +4,7 @@
   <Project Path="apps/services/WatchForge.DVRIP.Service/WatchForge.DVRIP.Service.csproj" />
   <Project Path="libs/WatchForge.DVRIP.Library.Tests/WatchForge.DVRIP.Library.Tests.csproj" />
   <Project Path="libs/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
-  <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/WatchForge.MotionSentinel.Server.Service.csproj" />
+  <Project Path="apps/services/WatchForge.MotionSentinel.Service/WatchForge.MotionSentinel.Service.csproj" />
   <Project Path="libs/WatchForge.MotionSentinel.Library.Tests/WatchForge.MotionSentinel.Library.Tests.csproj" />
-  <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/WatchForge.MotionSentinel.Server.Service.Tests.csproj" />
+  <Project Path="apps/services/WatchForge.MotionSentinel.Service.Tests/WatchForge.MotionSentinel.Service.Tests.csproj" />
 </Solution>

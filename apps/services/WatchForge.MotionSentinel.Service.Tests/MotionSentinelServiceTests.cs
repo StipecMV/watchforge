@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.Tests;
+namespace WatchForge.MotionSentinel.Service.Tests;
 
 public sealed class MotionSentinelServiceTests
 {

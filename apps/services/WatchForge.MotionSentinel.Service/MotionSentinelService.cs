@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service;
+namespace WatchForge.MotionSentinel.Service;
 
 /// <summary>
 /// Hosted service entry point. Implements IHostedLifecycleService (.NET 8+) for

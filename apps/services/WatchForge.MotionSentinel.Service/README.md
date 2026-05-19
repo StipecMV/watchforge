@@ -21,7 +21,7 @@ graph TD
         Models[Models: MotionRegion · MotionEvent · DetectionResult · VideoMetadata]
     end
 
-    subgraph Service ["WatchForge.MotionSentinel.Server.Service (Worker Service)"]
+    subgraph Service ["WatchForge.MotionSentinel.Service (Worker Service)"]
         MSS[MotionSentinelService\nIHostedLifecycleService]
         LFS[LocalFileService]
         FVS[FileVideoSource\nOpenCV VideoCapture]
@@ -172,10 +172,10 @@ dotnet test --solution WatchForge.slnx
 
 # Or run MotionSentinel tests only
 dotnet run --project libs/WatchForge.MotionSentinel.Library.Tests/
-dotnet run --project apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/
+dotnet run --project apps/services/WatchForge.MotionSentinel.Service.Tests/
 
 # Publish framework-dependent (AnyCPU — runs on any Linux with .NET 10 runtime)
-dotnet publish apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/ \
+dotnet publish apps/services/WatchForge.MotionSentinel.Service/ \
   -c Release \
   -o ./publish
 ```
@@ -193,7 +193,7 @@ dotnet-coverage collect \
   -f xml -o coverage-lib.xml
 
 dotnet-coverage collect \
-  "dotnet run --project apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/" \
+  "dotnet run --project apps/services/WatchForge.MotionSentinel.Service.Tests/" \
   -f xml -o coverage-service.xml
 
 # Generate HTML report
@@ -249,7 +249,7 @@ sudo journalctl -u motionsentinel -f
 ### Deploy update (same machine)
 
 ```bash
-dotnet publish WatchForge.MotionSentinel.Server.Service/ -c Release -o ./publish
+dotnet publish apps/services/WatchForge.MotionSentinel.Service/ -c Release -o ./publish
 sudo cp -r ./publish/* /opt/watchforge/motionsentinel/
 sudo systemctl restart motionsentinel
 ```
@@ -348,4 +348,4 @@ This is enforced at two levels:
 
 ---
 
-*Part of [WatchForge](../../../README.md) · `/apps/services/motion-sentinel/` · .NET 10 · Linux · OpenCV · TUnit*
+*Part of [WatchForge](../../README.md) · `/apps/services/WatchForge.MotionSentinel.Service/` · .NET 10 · Linux · OpenCV · TUnit*

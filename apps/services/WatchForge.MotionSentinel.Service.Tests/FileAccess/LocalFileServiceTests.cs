@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.Tests.FileAccess;
+namespace WatchForge.MotionSentinel.Service.Tests.FileAccess;
 
 public sealed class LocalFileServiceTests
 {

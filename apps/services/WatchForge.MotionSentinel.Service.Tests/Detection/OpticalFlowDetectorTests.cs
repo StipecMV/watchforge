@@ -1,7 +1,7 @@
 using OpenCvSharp;
-using WatchForge.MotionSentinel.Server.Service.Detection;
+using WatchForge.MotionSentinel.Service.Detection;
 
-namespace WatchForge.MotionSentinel.Server.Service.Tests.Detection;
+namespace WatchForge.MotionSentinel.Service.Tests.Detection;
 
 public sealed class OpticalFlowDetectorTests
 {

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace WatchForge.MotionSentinel.Server.Service.VideoSources;
+namespace WatchForge.MotionSentinel.Service.VideoSources;
 
 /// <summary>
 /// Extracts frames from a local MP4 file using OpenCV VideoCapture.

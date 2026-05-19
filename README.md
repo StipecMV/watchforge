@@ -15,10 +15,9 @@ watchforge/
 │   ├── web/                     # Angular frontend
 │   ├── api/                     # REST API server (.NET)
 │   └── services/
-│       ├── motion-sentinel/     # Linux Worker Service — OpenCV motion detection
-│       │   ├── WatchForge.MotionSentinel.Server.Service/
-│       │   └── WatchForge.MotionSentinel.Server.Service.Tests/
-│       └── WatchForge.DVRIP.Service/  # DVRIP file downloader for Xiongmai/Sofia NVR
+│       ├── WatchForge.MotionSentinel.Service/       # Linux Worker Service — OpenCV motion detection
+│       ├── WatchForge.MotionSentinel.Service.Tests/
+│       └── WatchForge.DVRIP.Service/                # DVRIP file downloader for Xiongmai/Sofia NVR
 ├── libs/
 │   ├── WatchForge.DVRIP.Library/           # DVRIP protocol library (NuGet)
 │   ├── WatchForge.DVRIP.Library.Tests/     # Unit tests for DVRIP library
@@ -37,7 +36,7 @@ watchforge/
 - 🔌 Headless Worker Service — runs as a systemd unit, no UI required
 - 🧪 test coverage via TUnit + Moq
 
-See [apps/services/motion-sentinel/README.md](apps/services/motion-sentinel/README.md) for full docs.
+See [apps/services/WatchForge.MotionSentinel.Service/README.md](apps/services/WatchForge.MotionSentinel.Service/README.md) for full docs.
 
 ### NVR Client (.NET · Linux)
 - 📡 DVRIP protocol — native Xiongmai/Sofia TCP protocol (port 34567)

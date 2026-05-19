@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.FileAccess;
+namespace WatchForge.MotionSentinel.Service.FileAccess;
 
 /// <summary>Configuration options for <see cref="LocalFileService"/>, bound from the <c>MotionSentinel</c> config section.</summary>
 public sealed record LocalFileServiceOptions

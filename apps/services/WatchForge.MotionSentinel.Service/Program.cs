@@ -1,9 +1,9 @@
-using WatchForge.MotionSentinel.Server.Service;
-using WatchForge.MotionSentinel.Server.Service.Detection;
-using WatchForge.MotionSentinel.Server.Service.FileAccess;
-using WatchForge.MotionSentinel.Server.Service.Infrastructure.Logging;
-using WatchForge.MotionSentinel.Server.Service.Infrastructure.Wrappers;
-using WatchForge.MotionSentinel.Server.Service.VideoSources;
+using WatchForge.MotionSentinel.Service;
+using WatchForge.MotionSentinel.Service.Detection;
+using WatchForge.MotionSentinel.Service.FileAccess;
+using WatchForge.MotionSentinel.Service.Infrastructure.Logging;
+using WatchForge.MotionSentinel.Service.Infrastructure.Wrappers;
+using WatchForge.MotionSentinel.Service.VideoSources;
 
 var builder = Host.CreateApplicationBuilder(args);
 

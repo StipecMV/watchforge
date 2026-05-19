@@ -3,7 +3,7 @@ using log4net.Core;
 using log4net.Layout;
 using log4net.Repository.Hierarchy;
 
-namespace WatchForge.MotionSentinel.Server.Service.Infrastructure.Logging;
+namespace WatchForge.MotionSentinel.Service.Infrastructure.Logging;
 
 /// <summary>Configures log4net with a rolling daily file appender without relying on an XML config file.</summary>
 public static class Log4NetConfigurator

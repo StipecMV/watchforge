@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.Detection;
+namespace WatchForge.MotionSentinel.Service.Detection;
 
 /// <summary>
 /// Dense optical flow using Farneback algorithm.

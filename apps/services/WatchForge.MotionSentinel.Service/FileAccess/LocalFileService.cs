@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.FileAccess;
+namespace WatchForge.MotionSentinel.Service.FileAccess;
 
 /// <summary>
 /// IFileAccessService implementation for local filesystem access.

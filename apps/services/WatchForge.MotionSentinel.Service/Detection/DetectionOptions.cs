@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Service.Detection;
+namespace WatchForge.MotionSentinel.Service.Detection;
 
 /// <summary>Tuning parameters for the motion detection algorithm, bound from the <c>Detection</c> config section.</summary>
 public sealed record DetectionOptions
