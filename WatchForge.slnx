@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Solution>
   <Project Path="libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
-  <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp/WatchForge.NVR.Client.TestApp.csproj" />
-  <Project Path="apps/services/nvr-client/WatchForge.NVR.Client.TestApp.Tests/WatchForge.NVR.Client.TestApp.Tests.csproj" />
+  <Project Path="apps/services/WatchForge.DVRIP.Service/WatchForge.DVRIP.Service.csproj" />
+  <Project Path="apps/services/WatchForge.NVR.Client.TestApp.Tests/WatchForge.NVR.Client.TestApp.Tests.csproj" />
   <Project Path="libs/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
   <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/WatchForge.MotionSentinel.Server.Service.csproj" />
   <Project Path="apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/WatchForge.MotionSentinel.Server.Core.Tests.csproj" />

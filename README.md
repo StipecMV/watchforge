@@ -19,7 +19,7 @@ watchforge/
 │       │   ├── WatchForge.MotionSentinel.Server.Service/
 │       │   ├── WatchForge.MotionSentinel.Server.Core.Tests/
 │       │   └── WatchForge.MotionSentinel.Server.Service.Tests/
-│       └── nvr-client/          # DVRIP file downloader for Xiongmai/Sofia NVR
+│       └── WatchForge.DVRIP.Service/  # DVRIP file downloader for Xiongmai/Sofia NVR
 │           ├── WatchForge.NVR.Client.TestApp/
 │           └── WatchForge.NVR.Client.TestApp.Tests/
 ├── libs/
@@ -45,7 +45,7 @@ See [apps/services/motion-sentinel/README.md](apps/services/motion-sentinel/READ
 - 🔐 Sofia MD5 login, file listing, best-effort H.264 file download
 - 🖥️ .NET 10, Linux (x64, arm64)
 - 🧪 test coverage via TUnit + Moq
-See [apps/services/nvr-client/README.md](apps/services/nvr-client/README.md) for full docs.
+See [apps/services/WatchForge.DVRIP.Service/README.md](apps/services/WatchForge.DVRIP.Service/README.md) for full docs.
 
 ## 🛠️ Tech Stack
 

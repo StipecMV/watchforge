@@ -13,13 +13,13 @@ Although the NVR advertises partial ONVIF support, in practice the Movols/Xiongm
 ## Project Structure
 
 ```
-apps/services/nvr-client/
+apps/services/WatchForge.DVRIP.Service/
 ├── Dockerfile
-├── WatchForge.NVR.Client.TestApp/           # Console app (references DVRIP library)
+├── WatchForge.DVRIP.Service/           # Console app (references DVRIP library)
 │   ├── Program.cs                           # Entry point, oneshot + infinite modes
 │   ├── DownloadStateService.cs              # Tracks downloaded files (downloaded.json)
 │   └── appsettings.json
-└── WatchForge.NVR.Client.TestApp.Tests/     # Unit tests (TUnit, references DVRIP library)
+└── WatchForge.DVRIP.Service.Tests/     # Unit tests (TUnit, references DVRIP library)
     ├── NvrFileTests.cs
     ├── SofiaPasswordTests.cs
     ├── DvripPacketTests.cs
@@ -35,7 +35,7 @@ libs/dvrip/WatchForge.DVRIP.Library/         # Reusable DVRIP protocol library (
 
 ## Configuration
 
-Edit `appsettings.json` in `WatchForge.NVR.Client.TestApp/`:
+Edit `appsettings.json` in `WatchForge.DVRIP.Service/`:
 
 ```json
 {
@@ -73,7 +73,7 @@ Edit `appsettings.json` in `WatchForge.NVR.Client.TestApp/`:
 Queries the NVR for recordings in a specific time window (`StartTime` + `DurationMinutes`), downloads them, and exits.
 
 ```bash
-dotnet run --project WatchForge.NVR.Client.TestApp
+dotnet run --project WatchForge.DVRIP.Service
 ```
 
 ### Infinite
@@ -82,7 +82,7 @@ Runs continuously. On each poll it queries the entire available NVR history, ski
 
 ```bash
 # appsettings.json: "Mode": "infinite"
-dotnet run --project WatchForge.NVR.Client.TestApp
+dotnet run --project WatchForge.DVRIP.Service
 ```
 
 Press **Ctrl+C** to stop — current downloads finish cleanly before the process exits.
@@ -93,7 +93,7 @@ State is persisted in `{DownloadDir}/downloaded.json`. If the container restarts
 
 ```bash
 # All tests in this sub-project
-dotnet run --project WatchForge.NVR.Client.TestApp.Tests
+dotnet run --project WatchForge.DVRIP.Service.Tests
 
 # All tests in the solution
 dotnet test WatchForge.slnx

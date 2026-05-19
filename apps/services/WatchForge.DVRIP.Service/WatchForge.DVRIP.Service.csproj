@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>WatchForge.NVR.Client.TestApp</RootNamespace>
+    <RootNamespace>WatchForge.DVRIP.Service</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../../libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+    <ProjectReference Include="../../../libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   </ItemGroup>
 
   <ItemGroup>

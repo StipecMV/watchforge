@@ -1,4 +1,4 @@
-namespace WatchForge.NVR.Client.TestApp;
+namespace WatchForge.DVRIP.Service;
 
 /// <summary>
 /// Thread-safe persistent store for tracking which NVR files have already been downloaded.
