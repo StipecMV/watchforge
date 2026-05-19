@@ -17,14 +17,13 @@ watchforge/
 │   └── services/
 │       ├── motion-sentinel/     # Linux Worker Service — OpenCV motion detection
 │       │   ├── WatchForge.MotionSentinel.Server.Service/
-│       │   ├── WatchForge.MotionSentinel.Server.Core.Tests/
 │       │   └── WatchForge.MotionSentinel.Server.Service.Tests/
 │       └── WatchForge.DVRIP.Service/  # DVRIP file downloader for Xiongmai/Sofia NVR
-│           ├── WatchForge.NVR.Client.TestApp/
-│           └── WatchForge.NVR.Client.TestApp.Tests/
 ├── libs/
-│   ├── WatchForge.MotionSentinel.Library/  # NuGet
-│   └── dvrip/                   # WatchForge.DVRIP.Library (NuGet)
+│   ├── WatchForge.DVRIP.Library/           # DVRIP protocol library (NuGet)
+│   ├── WatchForge.DVRIP.Library.Tests/     # Unit tests for DVRIP library
+│   ├── WatchForge.MotionSentinel.Library/  # Motion detection library (NuGet)
+│   └── WatchForge.MotionSentinel.Library.Tests/  # Unit tests for MotionSentinel library
 └── db/
     └── queries/                 # Database schema and queries
 ```

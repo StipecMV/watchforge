@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>WatchForge.NVR.Client.TestApp.Tests</RootNamespace>
+    <RootNamespace>WatchForge.DVRIP.Library.Tests</RootNamespace>
     <OutputType>Exe</OutputType>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
@@ -14,11 +14,12 @@
     <PackageReference Include="TUnit" Version="1.19.74" />
     <PackageReference Include="TUnit.Assertions" Version="1.19.74" />
     <PackageReference Include="coverlet.collector" Version="8.0.1" />
+    <PackageReference Include="coverlet.msbuild" Version="8.0.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+    <ProjectReference Include="../WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   </ItemGroup>
 
 </Project>

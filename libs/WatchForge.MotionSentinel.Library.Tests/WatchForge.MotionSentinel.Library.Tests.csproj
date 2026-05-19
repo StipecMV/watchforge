@@ -7,7 +7,7 @@
     <IsTestProject>true</IsTestProject>
     <OutputType>Exe</OutputType>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <RootNamespace>WatchForge.MotionSentinel.Server.Core.Tests</RootNamespace>
+    <RootNamespace>WatchForge.MotionSentinel.Library.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\WatchForge.MotionSentinel.Library\WatchForge.MotionSentinel.Library.csproj" />
+    <ProjectReference Include="..\WatchForge.MotionSentinel.Library\WatchForge.MotionSentinel.Library.csproj" />
   </ItemGroup>
 
 </Project>

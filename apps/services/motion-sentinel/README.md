@@ -32,8 +32,9 @@ graph TD
         PRG[Program.cs / DI]
     end
 
-    subgraph CoreTests ["Core.Tests (TUnit)"]
+    subgraph LibTests ["MotionSentinel.Library.Tests (TUnit)"]
         OT[MotionAnalysisOrchestratorTests]
+        DJS2[DetectionJsonSerializerTests]
     end
 
     subgraph ServiceTests ["Service.Tests (TUnit)"]
@@ -66,7 +67,8 @@ graph TD
     LFS --> DET
     LOG --> LOGS
 
-    CoreTests --> MAO
+    LibTests --> MAO
+    LibTests --> DJS
     ServiceTests --> LFS
     ServiceTests --> OFD
     ServiceTests --> MSS
@@ -169,8 +171,8 @@ sequenceDiagram
 dotnet test --solution WatchForge.slnx
 
 # Or run MotionSentinel tests only
-dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/
-dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/
+dotnet run --project libs/WatchForge.MotionSentinel.Library.Tests/
+dotnet run --project apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/
 
 # Publish framework-dependent (AnyCPU — runs on any Linux with .NET 10 runtime)
 dotnet publish apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service/ \
@@ -187,16 +189,16 @@ cross-compilation is required — build and deploy locally.
 ```bash
 # Collect coverage for all MotionSentinel test projects
 dotnet-coverage collect \
-  "dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Core.Tests/" \
-  -f xml -o coverage-core.xml
+  "dotnet run --project libs/WatchForge.MotionSentinel.Library.Tests/" \
+  -f xml -o coverage-lib.xml
 
 dotnet-coverage collect \
-  "dotnet test apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/" \
+  "dotnet run --project apps/services/motion-sentinel/WatchForge.MotionSentinel.Server.Service.Tests/" \
   -f xml -o coverage-service.xml
 
 # Generate HTML report
 reportgenerator \
-  -reports:"coverage-core.xml;coverage-service.xml" \
+  -reports:"coverage-lib.xml;coverage-service.xml" \
   -targetdir:"coverage-report" \
   -reporttypes:Html
 ```

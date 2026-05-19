@@ -13,24 +13,25 @@ Although the NVR advertises partial ONVIF support, in practice the Movols/Xiongm
 ## Project Structure
 
 ```
-apps/services/WatchForge.DVRIP.Service/
+apps/services/WatchForge.DVRIP.Service/   # Console app (references DVRIP library)
 ├── Dockerfile
-├── WatchForge.DVRIP.Service/           # Console app (references DVRIP library)
-│   ├── Program.cs                           # Entry point, oneshot + infinite modes
-│   ├── DownloadStateService.cs              # Tracks downloaded files (downloaded.json)
-│   └── appsettings.json
-└── WatchForge.DVRIP.Service.Tests/     # Unit tests (TUnit, references DVRIP library)
-    ├── NvrFileTests.cs
-    ├── SofiaPasswordTests.cs
-    ├── DvripPacketTests.cs
-    └── FileQueryTests.cs
+├── Program.cs                            # Entry point, oneshot + infinite modes
+├── DownloadStateService.cs               # Tracks downloaded files (downloaded.json)
+└── appsettings.json
 
-libs/dvrip/WatchForge.DVRIP.Library/         # Reusable DVRIP protocol library (NuGet)
-├── DvripClient.cs                           # Login, file query, download, ffmpeg
-├── DvripPacket.cs                           # Packet build/parse
+libs/WatchForge.DVRIP.Library/            # Reusable DVRIP protocol library (NuGet)
+├── DvripClient.cs                        # Login, file query, download, ffmpeg
+├── DvripPacket.cs                        # Packet build/parse
 └── Models/
     ├── LoginResult.cs
     └── NvrFile.cs
+
+libs/WatchForge.DVRIP.Library.Tests/      # Unit tests (TUnit)
+├── NvrFileTests.cs
+├── SofiaPasswordTests.cs
+├── DvripPacketTests.cs
+├── FileQueryTests.cs
+└── LoginResultTests.cs
 ```
 
 ## Configuration
@@ -92,8 +93,8 @@ State is persisted in `{DownloadDir}/downloaded.json`. If the container restarts
 ## How to Run Tests
 
 ```bash
-# All tests in this sub-project
-dotnet run --project WatchForge.DVRIP.Service.Tests
+# DVRIP library tests
+dotnet run --project libs/WatchForge.DVRIP.Library.Tests
 
 # All tests in the solution
 dotnet test WatchForge.slnx
@@ -104,8 +105,8 @@ dotnet test WatchForge.slnx
 ### Build the image
 
 ```bash
-cd apps/services/nvr-client
-podman build -t watchforge-nvr-client .
+cd apps/services/WatchForge.DVRIP.Service
+podman build -t watchforge-dvrip-service .
 ```
 
 ### Run oneshot

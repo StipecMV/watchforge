@@ -1,4 +1,4 @@
-namespace WatchForge.NVR.Client.TestApp.Tests;
+namespace WatchForge.DVRIP.Library.Tests;
 
 public class FileQueryTests
 {

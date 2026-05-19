@@ -1,4 +1,4 @@
-namespace WatchForge.MotionSentinel.Server.Core.Tests.Services;
+namespace WatchForge.MotionSentinel.Library.Tests.Services;
 
 public sealed class MotionAnalysisOrchestratorTests
 {

@@ -1,4 +1,4 @@
-namespace WatchForge.NVR.Client.TestApp.Tests;
+namespace WatchForge.DVRIP.Library.Tests;
 
 public class DvripPacketTests
 {
@@ -219,5 +219,108 @@ public class DvripPacketTests
         await Assert.That(packet.SequenceNumber).IsEqualTo(seqNum);
         await Assert.That(packet.MessageId).IsEqualTo(msgId);
         await Assert.That(packet.Payload).IsEquivalentTo(payload);
+    }
+
+    // ── ReadFromStreamAsync ───────────────────────────────────────────────────
+
+    [Test]
+    public async Task ReadFromStreamAsync_ValidHeaderAndPayload_ReturnsCorrectPacket()
+    {
+        // Given a packet built with known fields, split into header + stream payload
+        var payload  = new byte[] { 0x01, 0x02, 0x03 };
+        var allBytes = DvripPacket.Build(sessionId: 0xAB, seqNum: 7, msgId: 1000, payload);
+        var header   = allBytes[..DvripPacket.HeaderSize];
+        using var stream = new MemoryStream(allBytes[DvripPacket.HeaderSize..]);
+
+        // When read from stream
+        var packet = await DvripPacket.ReadFromStreamAsync(stream, header);
+
+        // Then all fields are recovered correctly
+        await Assert.That(packet.SessionId).IsEqualTo(0xABu);
+        await Assert.That(packet.SequenceNumber).IsEqualTo(7u);
+        await Assert.That(packet.MessageId).IsEqualTo((ushort)1000);
+        await Assert.That(packet.Payload).IsEquivalentTo(payload);
+    }
+
+    [Test]
+    public async Task ReadFromStreamAsync_EmptyPayload_ReturnsPacketWithEmptyPayload()
+    {
+        // Given a packet with no payload
+        var allBytes = DvripPacket.Build(sessionId: 0, seqNum: 0, msgId: 1440, Array.Empty<byte>());
+        var header   = allBytes[..DvripPacket.HeaderSize];
+        using var stream = new MemoryStream(Array.Empty<byte>());
+
+        // When read from stream
+        var packet = await DvripPacket.ReadFromStreamAsync(stream, header);
+
+        // Then payload is empty (not null, not an exception)
+        await Assert.That(packet.Payload.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ReadFromStreamAsync_ShortHeader_ThrowsInvalidDataException()
+    {
+        // Given a header buffer that is too small (less than HeaderSize bytes)
+        var shortHeader = new byte[10];
+        using var stream = new MemoryStream(Array.Empty<byte>());
+
+        // When called with the short header
+        // Then InvalidDataException is thrown
+        await Assert.That(async () => await DvripPacket.ReadFromStreamAsync(stream, shortHeader))
+            .ThrowsException()
+            .WithMessageContaining("Header");
+    }
+
+    [Test]
+    public async Task ReadFromStreamAsync_WrongMagicByte_ThrowsInvalidDataException()
+    {
+        // Given a 20-byte header where byte 0 is not 0xFF
+        var header = new byte[DvripPacket.HeaderSize];
+        header[0] = 0xFE; // wrong magic
+        using var stream = new MemoryStream(Array.Empty<byte>());
+
+        // When called
+        // Then InvalidDataException is thrown mentioning the invalid magic
+        await Assert.That(async () => await DvripPacket.ReadFromStreamAsync(stream, header))
+            .ThrowsException()
+            .WithMessageContaining("magic");
+    }
+
+    [Test]
+    public async Task ReadFromStreamAsync_StreamClosedBeforePayloadComplete_ThrowsEndOfStreamException()
+    {
+        // Given a header that declares 10 bytes of payload but the stream is empty
+        var header = DvripPacket.Build(0, 0, 1000, new byte[10])[..DvripPacket.HeaderSize];
+        using var stream = new MemoryStream(Array.Empty<byte>()); // no payload bytes
+
+        // When the stream is exhausted before the declared payload is read
+        // Then EndOfStreamException is thrown
+        await Assert.That(async () => await DvripPacket.ReadFromStreamAsync(stream, header))
+            .ThrowsException()
+            .WithMessageContaining("closed");
+    }
+
+    [Test]
+    public async Task ReadFromStreamAsync_RoundTripMatchesParse()
+    {
+        // Given a packet with all fields set
+        uint   sessionId = 0xCAFEBABE;
+        uint   seqNum    = 55;
+        ushort msgId     = 1426;
+        var    payload   = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+        var    allBytes  = DvripPacket.Build(sessionId, seqNum, msgId, payload);
+
+        var header = allBytes[..DvripPacket.HeaderSize];
+        using var stream = new MemoryStream(allBytes[DvripPacket.HeaderSize..]);
+
+        // When read from stream and also parsed directly
+        var fromStream = await DvripPacket.ReadFromStreamAsync(stream, header);
+        var fromParse  = DvripPacket.Parse(allBytes);
+
+        // Then both produce identical results
+        await Assert.That(fromStream.SessionId).IsEqualTo(fromParse.SessionId);
+        await Assert.That(fromStream.SequenceNumber).IsEqualTo(fromParse.SequenceNumber);
+        await Assert.That(fromStream.MessageId).IsEqualTo(fromParse.MessageId);
+        await Assert.That(fromStream.Payload).IsEquivalentTo(fromParse.Payload);
     }
 }
