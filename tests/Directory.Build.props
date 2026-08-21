@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    Spoločné pre všetky test projekty (S14-1):
+    TUnitAssertions0005/TUnit0018 sú štýlové analyzátorové pravidlá
+    (Assert.That s konštantou, inštančné dáta v teste) — nie chyby kompilácie.
+    Potlačené, aby Release build (CI) bol čistý 0 warning / 0 error.
+  -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);TUnitAssertions0005;TUnit0018</NoWarn>
+  </PropertyGroup>
+</Project>

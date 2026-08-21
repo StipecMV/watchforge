@@ -1,0 +1,258 @@
+<div class="dash">
+  <header class="topbar">
+    <span class="wordmark">WatchForge</span>
+    <div class="panel-toggles">
+      <button
+        class="pill"
+        [class.on]="showEvents"
+        (click)="toggleEvents()"
+      >{{ 'dash.events' | translate }}</button>
+      <button
+        class="pill"
+        [class.on]="showRecordings"
+        (click)="toggleRecordings()"
+      >{{ 'dash.recordings' | translate }}</button>
+      <button
+        class="pill"
+        [class.on]="showTimeline"
+        (click)="toggleTimeline()"
+      >{{ 'dash.timeline' | translate }}</button>
+    </div>
+    <div class="topbar-spacer"></div>
+    @if (camera) {
+      <span class="camera-chip">{{ camera.friendlyName }} · CH{{ camera.channel + 1 }}</span>
+    }
+    <button class="export-btn" (click)="toggleExportPanel()" [title]="'export.export' | translate">
+      ⬇ {{ 'export.export' | translate }}
+    </button>
+  </header>
+
+  @if (showExportPanel && camera) {
+    <div class="export-panel">
+      <span class="export-label">{{ 'export.from' | translate }}</span>
+      <input
+        class="export-input"
+        type="datetime-local"
+        [(ngModel)]="exportFrom"
+      />
+      <span class="export-label">{{ 'export.to' | translate }}</span>
+      <input
+        class="export-input"
+        type="datetime-local"
+        [(ngModel)]="exportTo"
+      />
+      <button
+        class="export-go"
+        (click)="startExport()"
+        [disabled]="exportPhase === 'requesting' || exportPhase === 'processing'"
+      >{{ 'export.start' | translate }}</button>
+
+      @if (exportPhase === 'requesting' || exportPhase === 'processing') {
+        <span class="export-status">
+          <span class="spinner"></span>
+          {{ exportStatusText() }}
+        </span>
+      }
+      @if (exportPhase === 'ready' && exportClipUrl) {
+        <a class="export-download" [href]="exportClipUrl" target="_blank">
+          ⬇ {{ 'export.download' | translate }}
+        </a>
+      }
+      @if (exportError) {
+        <span class="export-status error">{{ exportError | translate }}</span>
+      }
+    </div>
+  }
+
+  @if (!camera) {
+    <div class="no-camera">{{ 'dash.noCamera' | translate }}</div>
+  } @else if (loading) {
+    <div class="no-camera">{{ 'common.loading' | translate }}</div>
+  } @else if (loadError) {
+    <div class="no-camera error">{{ 'dash.loadError' | translate }}</div>
+  } @else {
+    <div class="dash-body">
+      <div class="player-col">
+        <app-video-player
+          [clipUrl]="clipUrl"
+          [region]="region"
+          [eventLabel]="eventLabel"
+          (timeUpdate)="onPlayerTime($event)"
+          (durationChange)="onPlayerDuration($event)"
+          (playState)="onPlayerPlayState($event)"
+        ></app-video-player>
+
+        @if (clipPhase === 'requesting' || clipPhase === 'processing') {
+          <div class="clip-status">
+            <span class="spinner"></span>
+            {{ clipStatusText() }}
+          </div>
+        }
+        @if (clipPhase === 'error') {
+          <div class="clip-status error">{{ 'dash.clipError' | translate }}</div>
+        }
+      </div>
+
+      @if (showEvents) {
+        <aside class="event-panel">
+          <div class="panel-head">
+            <span class="panel-title">{{ 'dash.selectedEvent' | translate }}</span>
+            <button class="close-btn" (click)="showEvents = false" title="×">×</button>
+          </div>
+
+          @if (selected) {
+            <div class="nav-row">
+              <button class="jump-btn" (click)="prevEvent()" [disabled]="selectedIndex <= 0">«</button>
+              <span class="nav-count">
+                {{ 'dash.eventOf' | translate: { index: selectedIndex + 1, total: filteredEvents.length } }}
+              </span>
+              <button class="jump-btn" (click)="nextEvent()" [disabled]="selectedIndex >= filteredEvents.length - 1">»</button>
+            </div>
+
+            <div class="event-detail">
+              <div class="detail-time">{{ formatEventTime(selected) }}</div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.channel' | translate }}</span>
+                <span class="detail-value">CH{{ (selected.recording?.cameraId ?? camera.cameraId) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.motion' | translate }}</span>
+                <span class="detail-value">{{ detectionTypeLabel(selected.detection.detectionType) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.confidence' | translate }}</span>
+                <span class="detail-value">{{ selected.detection.confidence.toFixed(2) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.duration' | translate }}</span>
+                <span class="detail-value">{{ (selected.detection.durationMs / 1000).toFixed(1) }} s</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.region' | translate }}</span>
+                <span class="detail-value mono">
+                  {{ selected.detection.regionX.toFixed(2) }}, {{ selected.detection.regionY.toFixed(2) }},
+                  {{ selected.detection.regionW.toFixed(2) }}×{{ selected.detection.regionH.toFixed(2) }}
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'dash.flag' | translate }}</span>
+                <span class="detail-value flag" [class.flagged]="selected.detection.flag === 'flagged'">
+                  {{ flagLabel(selected.detection.flag) }}
+                </span>
+              </div>
+              <button class="flag-btn" (click)="openFlag()">🚩 {{ 'flag.open' | translate }}</button>
+              @if (selected.recording?.personPending) {
+                <button class="flag-btn person-review-btn" (click)="markPersonReviewed()">
+                  ✅ {{ 'dash.personReviewed' | translate }}
+                </button>
+              }
+            </div>
+          }
+
+          <div class="event-list">
+            @for (ev of filteredEvents; track ev.detection.detectionId; let i = $index) {
+              <button
+                class="event-row"
+                [class.active]="i === selectedIndex"
+                (click)="selectEvent(i)"
+              >
+                <span class="event-time">{{ formatEventTime(ev) }}</span>
+                <span class="event-type" [class.person]="ev.detection.detectionType === 'person'">
+                  {{ detectionTypeLabel(ev.detection.detectionType) }}
+                </span>
+                @if (ev.detection.flag !== 'none') {
+                  <span class="flag-dot" [title]="flagLabel(ev.detection.flag)"></span>
+                }
+              </button>
+            } @empty {
+              <div class="no-events">{{ (recordings.length > 0 || eventsLoaded) ? ('dash.noAnalysesYet' | translate) : ('dash.noData' | translate) }}</div>
+            }
+          </div>
+        </aside>
+      }
+
+      @if (showRecordings) {
+        <aside class="side-panel recordings-panel">
+          <div class="panel-head">
+            <span class="panel-title">{{ 'dash.recordings' | translate }}</span>
+            <span class="panel-count mono">{{ recordings.length }}</span>
+            <span class="panel-spacer"></span>
+            <button class="close-btn" (click)="showRecordings = false" title="×">×</button>
+          </div>
+          <div class="panel-sub">
+            <span class="panel-sub-name">{{ camera.friendlyName }}</span>
+          </div>
+          <div class="rec-list">
+            @for (row of recordingRows; track row.recording.recordingId) {
+              <button
+                class="rec-row"
+                [class.active]="row.recording.recordingId === activeRecordingId"
+                (click)="selectRecording(row.recording.recordingId)"
+              >
+                <span class="rec-time mono">{{ recordingStartLabel(row) }}</span>
+                @if (row.recording.personPending) {
+                  <span class="rec-person-badge" title="Nájdená osoba — čaká na potvrdenie (skip pre cleanup)">👤</span>
+                }
+                <span class="rec-spark" [attr.data-peak]="sparklinePeak(row)">
+                  @for (on of sparklineBars(row); track $index) {
+                    <span class="rec-bar" [class.on]="on"></span>
+                  }
+                </span>
+                <span class="rec-count mono">{{ row.count > 0 ? row.count : '·' }}</span>
+              </button>
+            } @empty {
+              <div class="no-events">{{ 'dash.noEvents' | translate }}</div>
+            }
+          </div>
+          <div class="panel-footer mono">
+            <span>{{ 'dash.total' | translate }}</span>
+            <span class="footer-value">{{ totalRecordingsDetections }} {{ 'dash.detections' | translate }}</span>
+          </div>
+        </aside>
+      }
+
+    </div>
+
+    <div class="stats-strip">
+      <div class="today-card" title="Počet detekcií v 6-minútových úsekoch poslednej hodiny (oranžový stĺpec = najviac detekcií)">
+        <div class="today-label">{{ 'dash.today' | translate }}</div>
+        <div class="today-number mono">{{ todayTotal }}</div>
+        <div class="today-unit">{{ 'dash.detections' | translate }}</div>
+        <div class="today-chart">
+          @for (v of todayBars; track $index) {
+            <span
+              class="today-bar"
+              [class.hot]="v > 0 && v === maxBar"
+              [style.height.%]="barHeight(v)"
+            ></span>
+          }
+        </div>
+        <div class="today-hint">{{ 'dash.todayHint' | translate }}</div>
+      </div>
+      <div class="filter-bar">
+        <span class="filter-label">{{ 'dash.filter' | translate }}</span>
+        <span class="filter-sep"></span>
+        <div class="filter-chips">
+          @for (f of filters; track f) {
+            <button
+              class="chip"
+              [class.on]="activeFilter === f"
+              (click)="setFilter(f)"
+            >{{ 'dash.filter.' + f | translate }}</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (showTimeline) {
+      <div class="timeline-zone">
+        <app-timeline
+          [duration]="duration"
+          [currentTime]="currentTime"
+          [events]="timelineEvents"
+          (seek)="onTimelineSeek($event)"
+        ></app-timeline>
+      </div>
+    }
+  }
+</div>

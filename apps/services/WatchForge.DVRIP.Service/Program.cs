@@ -238,7 +238,7 @@ async Task<(int succeeded, int failed)> DownloadAllAsync(
 
             try
             {
-                var outputPath = await client.DownloadFileAsync(file, rawPath, outputFormat, progress, ct);
+                var outputPath = await client.DownloadFileAsync(file, rawPath, outputFormat, progress, null, ct);
                 // Rename to final name if still has .downloading extension
                 if (outputPath != rawPath && File.Exists(outputPath))
                 {

@@ -1,0 +1,54 @@
+# WatchForge Runner — Quadlet unit (S9-2)
+# Inštalácia: skopíruj do ~/.config/containers/systemd/ a spusti:
+#   systemctl --user daemon-reload
+#   systemctl --user start watchforge-runner
+# Env vars (voliteľné, defaulty):
+#   WATCHFORGE_DB_PATH        — SQLite DB (default /data/watchforge.db cez volume)
+#   WATCHFORGE_API_TOKEN      — API token pre agenta/MCP
+#   WATCHFORGE_NVR_AUTH_FILE  — YAML súbor s NVR username/password (host mount)
+# Volumes:
+#   watchforge-data   — SQLite DB (zdieľaný s API)
+#   watchforge-media  — temp downloady + clips (zdieľaný s API)
+
+[Unit]
+Description=WatchForge Runner (processing service)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=localhost/watchforge-runner:latest
+ContainerName=watchforge-runner
+# Image sa očakáva lokálne postavený: podman build -t watchforge-runner deploy/Dockerfile.runner
+# (alebo podman-compose up -d --build)
+
+# Zdieľané volume s API
+Volume=watchforge-data:/data
+Volume=watchforge-media:/media
+
+# Environment — DB path, temp/clips cez volume
+Environment=WATCHFORGE__RUNNER__DBPATH=/data/watchforge.db
+Environment=WATCHFORGE__RUNNER__DOWNLOAD__TEMPDIR=/media/tmp
+Environment=WATCHFORGE__RUNNER__CLIPS__CLIPSDIR=/media/clips
+Environment=WATCHFORGE__RUNNER__HTTPPORT=8081
+
+# NVR auth — ak je WATCHFORGE_NVR_AUTH_FILE nastavený, mount súboru z hosta:
+#   Environment=WATCHFORGE_NVR_AUTH_FILE=/etc/watchforge/nvr-auth.yaml
+#   Mount=type=bind,source=/etc/watchforge/nvr-auth.yaml,destination=/etc/watchforge/nvr-auth.yaml,ro
+# (entrypoint-runner.sh ho prečíta a exportuje WATCHFORGE_NVR_USERNAME/_PASSWORD)
+
+# API token pre agenta/MCP (voliteľné):
+#   Environment=WATCHFORGE_API_TOKEN=...
+
+# Secrets (Podman secret, ak sa používa namiesto WATCHFORGE_NVR_AUTH_FILE):
+#   Secret=nvr-auth,type=mount,target=/run/secrets/nvr-auth,mode=0444
+
+PublishPort=8081:8081
+
+Network=watchforge-net.network
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,225 @@
+<div class="zone-editor">
+  <!-- Top bar (design: FOCUS ZONE chip + context + Cancel/Save) -->
+  <header class="zed-topbar">
+    <span class="zed-badge">FOCUS ZONE</span>
+    <span class="zed-context mono">
+      {{ draft ? ('zones.editingZone' | translate) : ('zones.newZone' | translate) }} · {{ 'zones.drawingOn' | translate }} {{ cameraName(cameraId ?? 0) }}
+    </span>
+    <span class="zed-spacer"></span>
+    <button class="zed-btn ghost cancel-zone" (click)="onCancel()">{{ 'common.cancel' | translate }}</button>
+    <button class="zed-btn primary save-zone" [disabled]="!canSave" (click)="save()">
+      <svg class="zed-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      {{ 'zones.saveZone' | translate }}
+    </button>
+  </header>
+
+  <div class="zed-body">
+    <!-- Canvas + plávajúci toolbar -->
+    <div class="zed-canvas-wrap">
+      <div class="zone-canvas">
+        <svg
+          viewBox="0 0 1600 900"
+          preserveAspectRatio="none"
+          tabindex="0"
+          class="zed-svg"
+          (pointerdown)="onPointerDown($event)"
+          (pointermove)="onPointerMove($event)"
+          (pointerup)="onPointerUp($event)"
+          (click)="onSvgClick($event)"
+          (dblclick)="onSvgDblClick($event)"
+          (keydown)="onSvgKeyDown($event)"
+        >
+          <defs>
+            <linearGradient id="zedSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a2440" />
+              <stop offset="1" stop-color="#0c1326" />
+            </linearGradient>
+          </defs>
+          <!-- S22j: pozadie = statická denná fotka kamery (súčasť web UI,
+               public/zone-bg/cam-{id}.jpg, servíruje web server — bez API). -->
+          @if (cameraId !== null) {
+            <image
+              [attr.href]="'/zone-bg/cam-' + cameraId + '.jpg'"
+              x="0" y="0" width="1600" height="900"
+              preserveAspectRatio="xMidYMid slice"
+              opacity="0.85"
+            />
+          }
+          <rect width="1600" height="900" fill="url(#zedSky)" />
+
+          <!-- existujúce zóny profilu (read-only, dashed) -->
+          @for (item of existingZones(); track $index) {
+            <g class="existing-zone">
+              <rect
+                [attr.x]="item.zone.x * FRAME_W"
+                [attr.y]="item.zone.y * FRAME_H"
+                [attr.width]="item.zone.w * FRAME_W"
+                [attr.height]="item.zone.h * FRAME_H"
+                [attr.fill]="zoneColor(item.type)"
+                fill-opacity="0.10"
+                [attr.stroke]="zoneColor(item.type)"
+                stroke-width="2"
+                stroke-dasharray="6 4"
+              />
+              <text
+                [attr.x]="item.zone.x * FRAME_W + 2"
+                [attr.y]="Math.max(item.zone.y * FRAME_H - 8, 14)"
+                [attr.fill]="zoneColor(item.type)"
+                font-size="13"
+                font-weight="800"
+                font-family="JetBrains Mono, monospace"
+              >{{ item.type === 'ignore' ? 'IGNORE' : 'FOCUS' }} · {{ item.zone.name || ('zones.unnamed' | translate) }}</text>
+            </g>
+          }
+
+          <!-- rozpracovaný polygón: čiara + body -->
+          @if (tool === 'polygon' && polyPreviewAttr()) {
+            <g>
+              <polyline [attr.points]="polyPreviewAttr()" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="4 3" />
+              @for (pt of polyPointsView(); track $index) {
+                <circle [attr.cx]="pt[0] * FRAME_W" [attr.cy]="pt[1] * FRAME_H" r="5" fill="#ffffff" />
+              }
+            </g>
+          }
+
+          <!-- draft: aktívne editovaná zóna (solid + glow) -->
+          @if (draft) {
+            <g class="draft-zone">
+              @if (draft.shape === 'rect') {
+                <rect
+                  [attr.x]="draft.x * FRAME_W"
+                  [attr.y]="draft.y * FRAME_H"
+                  [attr.width]="draft.w * FRAME_W"
+                  [attr.height]="draft.h * FRAME_H"
+                  [attr.fill]="zoneColor(zoneType)"
+                  fill-opacity="0.22"
+                  [attr.stroke]="zoneColor(zoneType)"
+                  stroke-width="3"
+                />
+              } @else {
+                <polygon
+                  [attr.points]="draftPointsAttr()"
+                  [attr.fill]="zoneColor(zoneType)"
+                  fill-opacity="0.22"
+                  [attr.stroke]="zoneColor(zoneType)"
+                  stroke-width="3"
+                />
+              }
+              <rect
+                [attr.x]="draft.x * FRAME_W"
+                [attr.y]="draft.y * FRAME_H"
+                [attr.width]="draft.w * FRAME_W"
+                [attr.height]="draft.h * FRAME_H"
+                fill="none"
+                [attr.stroke]="zoneColor(zoneType)"
+                stroke-width="1.5"
+                stroke-dasharray="3 3"
+              />
+              <text
+                [attr.x]="draft.x * FRAME_W + 2"
+                [attr.y]="Math.max(draft.y * FRAME_H - 8, 14)"
+                [attr.fill]="zoneColor(zoneType)"
+                font-size="13"
+                font-weight="800"
+                font-family="JetBrains Mono, monospace"
+              >{{ zoneType === 'ignore' ? 'IGNORE' : 'FOCUS' }} · {{ name || ('zones.unnamed' | translate) }}</text>
+            </g>
+          }
+        </svg>
+
+        <!-- plávajúci toolbar (design: top center) -->
+        <div class="zed-toolbar">
+          @for (t of tools(); track t.id) {
+            <button
+              class="zt-btn"
+              [class.active]="tool === t.id"
+              [title]="t.label | translate"
+              (click)="setTool(t.id)"
+            >
+              <svg class="zt-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                @switch (t.id) {
+                  @case ('rect') { <rect x="4" y="6" width="16" height="12" rx="1" /> }
+                  @case ('polygon') { <path d="M5 8l7-4 7 4-3 11H8z" /> }
+                  @case ('freehand') { <path d="M16 4l4 4L9 19l-5 1 1-5z" /> }
+                }
+              </svg>
+            </button>
+          }
+          <span class="zt-sep"></span>
+          <button class="zt-btn" [class.disabled]="!canUndo" [title]="'zones.undo' | translate" (click)="undo()">
+            <svg class="zt-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" /></svg>
+          </button>
+          <button class="zt-btn" [class.disabled]="!canRedo" [title]="'zones.redo' | translate" (click)="redo()">
+            <svg class="zt-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3" /></svg>
+          </button>
+          <span class="zt-sep"></span>
+          <button class="zt-btn" [title]="'zones.clear' | translate" (click)="clear()">
+            <svg class="zt-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pravý rail (design: Zone card + Drawn shape card) -->
+    <div class="zed-rail">
+      <div class="zed-card">
+        <div class="zed-card-title">{{ 'zones.zone' | translate }}</div>
+
+        <div class="zed-field">
+          <div class="zed-label">{{ 'zones.name' | translate }}</div>
+          <input class="zed-input" [(ngModel)]="name" [placeholder]="'zones.namePlaceholder' | translate" />
+        </div>
+
+        <div class="zed-field">
+          <div class="zed-label">{{ 'zones.camera' | translate }}</div>
+          <div class="zed-cameras">
+            @for (cam of cameras; track cam.cameraId) {
+              <button class="zed-cam" [class.active]="cameraId === cam.cameraId" (click)="selectCamera(cam.cameraId)">
+                <app-location-icon [name]="cam.iconId || 'camera'" [size]="13"></app-location-icon>
+                <span class="zed-cam-name">{{ cam.friendlyName }}</span>
+                <span class="zed-cam-id mono">CH{{ cam.channel + 1 }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="zed-field">
+          <div class="zed-label">{{ 'zones.type' | translate }}</div>
+          <div class="zed-type-toggle">
+            <button class="zt-type" [class.active]="zoneType === 'ignore'" [class.ignore]="zoneType === 'ignore'" (click)="setZoneType('ignore')">
+              {{ 'zones.ignore' | translate }}
+            </button>
+            <button class="zt-type" [class.active]="zoneType === 'focus'" [class.focus]="zoneType === 'focus'" (click)="setZoneType('focus')">
+              {{ 'zones.focus' | translate }}
+            </button>
+          </div>
+          <div class="type-hint">
+            {{ zoneType === 'ignore' ? ('zones.ignoreHint' | translate) : ('zones.focusHint' | translate) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="zed-card">
+        <div class="zed-card-title">{{ 'zones.drawnShape' | translate }}</div>
+        <div class="zed-stats">
+          <div class="zed-stat">
+            <div class="zed-stat-label">{{ 'zones.statXY' | translate }}</div>
+            <div class="zed-stat-value mono">{{ stats.hasShape ? stats.xPx + ' · ' + stats.yPx : '—' }}</div>
+          </div>
+          <div class="zed-stat">
+            <div class="zed-stat-label">{{ 'zones.statWH' | translate }}</div>
+            <div class="zed-stat-value mono">{{ stats.hasShape ? stats.wPx + ' × ' + stats.hPx : '—' }}</div>
+          </div>
+          <div class="zed-stat">
+            <div class="zed-stat-label">{{ 'zones.statArea' | translate }}</div>
+            <div class="zed-stat-value mono">{{ stats.hasShape ? stats.areaPct + '%' : '—' }}</div>
+          </div>
+          <div class="zed-stat">
+            <div class="zed-stat-label">{{ 'zones.statPoints' | translate }}</div>
+            <div class="zed-stat-value mono">{{ stats.hasShape ? stats.points + ' ' + ('zones.statPointsUnit' | translate) : '—' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

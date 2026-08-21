@@ -1,0 +1,13 @@
+# WatchForge .dockerignore (build context = repo root)
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.git/
+**/.angular/
+**/TestResults/
+docs/beh-logs/
+deploy/secrets/
+*.db
+*.db-wal
+*.db-shm

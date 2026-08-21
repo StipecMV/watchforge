@@ -1,0 +1,52 @@
+# WatchForge Runner (kontajner 1 — processing-service)
+# .NET 10 + ffmpeg (ClipExtract) + OpenCV native deps (CPU fallback)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Restore s cache (CPM centralizované verzie)
+COPY Directory.Packages.props ./
+COPY WatchForge.slnx ./
+COPY libraries/WatchForge.Interfaces.Library/WatchForge.Interfaces.Library.csproj libraries/WatchForge.Interfaces.Library/
+COPY libraries/WatchForge.Processing.Library/WatchForge.Processing.Library.csproj libraries/WatchForge.Processing.Library/
+COPY libraries/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj libraries/WatchForge.DVRIP.Library/
+COPY libraries/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj libraries/WatchForge.MotionSentinel.Library/
+COPY applications/services/WatchForge.Runner/WatchForge.Runner.csproj applications/services/WatchForge.Runner/
+RUN dotnet restore applications/services/WatchForge.Runner/WatchForge.Runner.csproj -r linux-x64
+
+COPY libraries/ libraries/
+COPY applications/services/WatchForge.Runner/ applications/services/WatchForge.Runner/
+# WatchForgeCpuOnly: kontajner nepoužíva CUDA build OpenCV (chýba libcuda runtime,
+# M2200 Maxwell aj tak nepodporuje sm_100 — S8-1 nález); CPU fallback je plnohodnotný.
+RUN dotnet publish applications/services/WatchForge.Runner/WatchForge.Runner.csproj \
+    -c Release -r linux-x64 --self-contained false -p:WatchForgeCpuOnly=true -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+
+# OpenCV native závislosti + ffmpeg (ClipExtract cut/frame) + SQLite tooling
+# libgtk-3/libgdk-3/libatk: OpenCV highgui vyžaduje GTK na linkovanie (aj bez GUI)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    libfontconfig1 \
+    libgtk-3-0 \
+    libatk1.0-0 \
+    libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/publish ./
+COPY deploy/scripts/entrypoint-runner.sh /usr/local/bin/entrypoint-runner.sh
+RUN chmod +x /usr/local/bin/entrypoint-runner.sh
+
+# Zdieľané volume: databáza + media cache (temp downloady + clips)
+VOLUME ["/data", "/media"]
+ENV WATCHFORGE__RUNNER__DBPATH=/data/watchforge.db \
+    WATCHFORGE__RUNNER__DOWNLOAD__TEMPDIR=/media/tmp \
+    WATCHFORGE__RUNNER__CLIPS__CLIPSDIR=/media/clips \
+    WATCHFORGE__RUNNER__HTTPPORT=8081 \
+    DOTNET_EnableDiagnostics=0
+
+EXPOSE 8081
+ENTRYPOINT ["entrypoint-runner.sh"]

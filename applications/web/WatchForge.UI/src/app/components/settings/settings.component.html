@@ -1,0 +1,597 @@
+<div class="settings">
+  <!-- Top bar (design: Wordmark + SETTINGS badge + Dashboard button + avatar) -->
+  <header class="topbar">
+    <span class="wordmark">WatchForge</span>
+    <span class="badge">SETTINGS</span>
+    <span class="topbar-spacer"></span>
+    <app-avatar [id]="'av' + String(avatarId).padStart(2, '0')" [size]="28"></app-avatar>
+  </header>
+
+  <div class="body">
+    <!-- Left nav -->
+    <nav class="nav">
+      <button class="nav-item" [class.active]="activeSection === 'profile'" (click)="selectSection('profile')">
+        {{ 'settings.section.profile' | translate }}
+      </button>
+      <button class="nav-item" [class.active]="activeSection === 'cameras'" (click)="selectSection('cameras')">
+        {{ 'settings.section.cameras' | translate }}
+      </button>
+      <button class="nav-item" [class.active]="activeSection === 'detection'" (click)="selectSection('detection')">
+        {{ 'settings.section.detection' | translate }}
+      </button>
+      <button class="nav-item" [class.active]="activeSection === 'zones'" (click)="selectSection('zones')">
+        {{ 'settings.section.zones' | translate }}
+      </button>
+      @if (isAdmin) {
+        <button class="nav-item" [class.active]="activeSection === 'users'" (click)="selectSection('users')">
+          {{ 'settings.section.users' | translate }}
+        </button>
+      }
+      <button class="nav-item" [class.active]="activeSection === 'security'" (click)="selectSection('security')">
+        {{ 'settings.section.security' | translate }}
+      </button>
+      @if (isAdmin) {
+        <button class="nav-item" [class.active]="activeSection === 'system'" (click)="selectSection('system')">
+          {{ 'settings.section.system' | translate }}
+        </button>
+      }
+      <button class="nav-item" [class.active]="activeSection === 'identities'" (click)="selectSection('identities')">
+        {{ 'settings.section.identities' | translate }}
+      </button>
+    </nav>
+
+    <!-- Content -->
+    <div class="content">
+      @switch (activeSection) {
+        @case ('profile') {
+          <!-- Profile: identity + avatar picker + locale -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.profile.identity' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.profile.identitySub' | translate }}</div>
+            </div>
+            <div class="identity-row">
+              <app-avatar [id]="'av' + String(avatarId).padStart(2, '0')" [size]="66"></app-avatar>
+              <div class="identity-info">
+                <div class="identity-name">{{ auth.currentUser()?.username }}</div>
+                <div class="identity-role">
+                  @if (isAdmin) {
+                    <span class="role-pill admin">ADMIN</span>
+                  } @else {
+                    <span class="role-pill">{{ 'settings.profile.standardRole' | translate }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+            @if (profileError) {
+              <div class="msg error">{{ profileError | translate }}</div>
+            }
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.profile.avatar' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.profile.avatarSub' | translate }}</div>
+            </div>
+            <div class="avatar-grid">
+              @for (spec of avatarSpecs; track spec.id) {
+                <button
+                  class="avatar-cell"
+                  [class.active]="'av' + String(avatarId).padStart(2, '0') === spec.id"
+                  (click)="pickAvatar(spec.id)"
+                >
+                  <app-avatar [id]="spec.id" [size]="44"></app-avatar>
+                  <span class="avatar-name">{{ spec.name }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.profile.language' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.profile.languageSub' | translate }}</div>
+            </div>
+            <div class="lang-row">
+              <button class="lang-btn" [class.active]="locale === 'sk'" (click)="setLocale('sk')">Slovenčina</button>
+              <button class="lang-btn" [class.active]="locale === 'en'" (click)="setLocale('en')">English</button>
+            </div>
+          </div>
+        }
+
+        @case ('cameras') {
+          <!-- Cameras: mapping friendly name + icon + active -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.cameras.title' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.cameras.subtitle' | translate }}</div>
+            </div>
+
+            <div class="cam-list">
+              @for (cam of activeCameras; track cam.cameraId) {
+                <div class="cam-row">
+                  <div class="cam-sys">
+                    <div class="cam-id mono">CH{{ cam.channel + 1 }}</div>
+                    <div class="cam-status">
+                      <span class="dot" [class.on]="edit(cam.cameraId).isActive"></span>
+                      {{ edit(cam.cameraId).isActive ? ('settings.cameras.online' | translate) : ('settings.cameras.offline' | translate) }}
+                    </div>
+                  </div>
+
+                  <input
+                    class="name-input"
+                    [ngModel]="edit(cam.cameraId).friendlyName"
+                    (ngModelChange)="edit(cam.cameraId).friendlyName = $event; markDirty(cam.cameraId)"
+                    [placeholder]="'sidebar.camera' | translate"
+                  />
+
+                  <label class="toggle" [class.on]="edit(cam.cameraId).isActive">
+                    <input
+                      type="checkbox"
+                      [checked]="edit(cam.cameraId).isActive"
+                      (change)="edit(cam.cameraId).isActive = !edit(cam.cameraId).isActive; markDirty(cam.cameraId)"
+                    />
+                    <span class="toggle-track"></span>
+                  </label>
+                </div>
+              } @empty {
+                <div class="empty">{{ 'sidebar.noCameras' | translate }}</div>
+              }
+            </div>
+
+            @if (camerasError) {
+              <div class="msg error">{{ camerasError | translate }}</div>
+            }
+
+            <div class="sticky-actions">
+              <span class="dirty-hint" [class.dirty]="camerasDirty">
+                {{ camerasDirty ? ('settings.cameras.unsaved' | translate) : ('settings.cameras.saved' | translate) }}
+              </span>
+              <button class="btn ghost" (click)="cancelCameras()" [disabled]="!camerasDirty">
+                {{ 'common.cancel' | translate }}
+              </button>
+              <button class="btn primary" (click)="saveCameras()" [disabled]="!camerasDirty">
+                {{ 'common.save' | translate }}
+              </button>
+            </div>
+          </div>
+        }
+
+        @case ('detection') {
+          <!-- Detection: per-camera motion tuning -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.detection.title' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.detection.subtitle' | translate }}</div>
+            </div>
+
+            <!-- Switch: spoločný profil (default) vs nastavenie per-kamera -->
+            <div class="form-row">
+              <div class="form-label">
+                <div>{{ 'settings.detection.perCamera' | translate }}</div>
+                <div class="hint">{{ 'settings.detection.perCameraHint' | translate }}</div>
+              </div>
+              <label class="toggle" [class.on]="detectionPerCamera">
+                <input
+                  type="checkbox"
+                  [checked]="detectionPerCamera"
+                  (change)="toggleDetectionMode()"
+                />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+
+            @if (detectionPerCamera) {
+              <div class="form-row">
+                <div class="form-label">
+                  <div>{{ 'settings.detection.camera' | translate }}</div>
+                </div>
+                <select class="select" [ngModel]="detectionCameraId" (ngModelChange)="selectDetectionCamera($event)">
+                  <option [ngValue]="null" disabled>{{ 'settings.detection.selectCamera' | translate }}</option>
+                  @for (cam of activeCameras; track cam.cameraId) {
+                    <option [ngValue]="cam.cameraId">{{ cam.friendlyName }} · CH{{ cam.channel + 1 }}</option>
+                  }
+                </select>
+              </div>
+            }
+
+            @if ((!detectionPerCamera) || detectionCameraId !== null) {
+              @if (profileLoading) {
+                <div class="empty">{{ 'common.loading' | translate }}</div>
+              } @else {
+                @if (profileLoadError) {
+                  <div class="msg info">{{ 'settings.detection.noProfile' | translate }}</div>
+                }
+                <div class="form-row">
+                  <div class="form-label">
+                    <div>{{ 'settings.detection.sensitivity' | translate }}</div>
+                    <div class="hint">{{ 'settings.detection.sensitivityHint' | translate }}</div>
+                  </div>
+                  <div class="slider-wrap">
+                    <input
+                      type="range" min="0" max="100" step="1"
+                      [ngModel]="uiSensitivity" (ngModelChange)="uiSensitivity = $event"
+                    />
+                    <span class="slider-value mono">{{ uiSensitivity }}</span>
+                  </div>
+                  <!-- Vizuál: sila rozpoznania pohybu (kvapky) -->
+                  <div class="visual-meter" [title]="'settings.detection.sensitivity' | translate">
+                    @for (drop of [1,2,3,4,5]; track drop) {
+                      <span class="drop" [class.on]="uiSensitivity >= drop * 20"></span>
+                    }
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-label">
+                    <div>{{ 'settings.detection.minSize' | translate }}</div>
+                    <div class="hint">{{ 'settings.detection.minSizeHint' | translate }}</div>
+                  </div>
+                  <div class="slider-wrap">
+                    <input
+                      type="range" min="8" max="256" step="1"
+                      [ngModel]="uiMinSizePx" (ngModelChange)="uiMinSizePx = $event"
+                    />
+                    <span class="slider-value mono">{{ uiMinSizePx }} px</span>
+                  </div>
+                  <!-- Vizuál: obdĺžnik vo veľkosti px (relatívne k 256 px boxu) -->
+                  <div class="size-visual" [title]="'settings.detection.minSize' | translate">
+                    <span
+                      class="size-box"
+                      [style.width.px]="Math.max(6, uiMinSizePx / 256 * 64)"
+                      [style.height.px]="Math.max(6, uiMinSizePx / 256 * 64)"
+                    ></span>
+                    <span class="size-label mono">{{ uiMinSizePx }} px</span>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-label">
+                    <div>{{ 'settings.detection.threshold' | translate }}</div>
+                    <div class="hint">{{ 'settings.detection.thresholdHint' | translate }}</div>
+                  </div>
+                  <div class="slider-wrap">
+                    <input
+                      type="range" min="0" max="100" step="1"
+                      [ngModel]="uiIntensityThreshold" (ngModelChange)="uiIntensityThreshold = $event"
+                    />
+                    <span class="slider-value mono">{{ uiIntensityThreshold }}</span>
+                  </div>
+                  <!-- Vizuál: prah — semafor (zelená = slabý pohyb stačí, červená = len silný) -->
+                  <div class="threshold-meter" [title]="'settings.detection.threshold' | translate">
+                    <span class="t-zone" [class.on]="uiIntensityThreshold <= 33" style="--zone:#22c55e">{{ 'settings.detection.weak' | translate }}</span>
+                    <span class="t-zone" [class.on]="uiIntensityThreshold > 33 && uiIntensityThreshold <= 66" style="--zone:#f59e0b">{{ 'settings.detection.medium' | translate }}</span>
+                    <span class="t-zone" [class.on]="uiIntensityThreshold > 66" style="--zone:#ef4444">{{ 'settings.detection.strong' | translate }}</span>
+                  </div>
+                </div>
+
+                @if (profileSaveError) {
+                  <div class="msg error">{{ profileSaveError | translate }}</div>
+                }
+                @if (profileSaved) {
+                  <div class="msg ok">{{ 'settings.detection.saved' | translate }}</div>
+                }
+
+                <div class="sticky-actions">
+                  <span class="dirty-hint">{{ 'settings.detection.newAnalysesOnly' | translate }}</span>
+                  <button class="btn primary" (click)="saveDetection()">{{ 'common.save' | translate }}</button>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        @case ('zones') {
+          <!-- Focus zones (S6-6): zoznam zón + editor kreslenia -->
+          @if (zoneEditor) {
+            <app-zone-editor
+              [cameras]="cameras"
+              [profile]="zoneEditor.profile"
+              [initialZone]="zoneEditor.editing?.zone ?? null"
+              [initialType]="zoneEditor.editing ? zoneEditor.editing.list : 'ignore'"
+              (saveZone)="onZoneSave($event)"
+              (cancel)="onZoneCancel()"
+              (cameraChange)="onZoneCameraChange($event)"
+            ></app-zone-editor>
+          } @else {
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">{{ 'zones.title' | translate }}</div>
+                <div class="card-subtitle">{{ 'zones.subtitle' | translate }}</div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-label">
+                  <div>{{ 'zones.camera' | translate }}</div>
+                </div>
+                <select class="select" [ngModel]="zonesCameraId" (ngModelChange)="selectZonesCamera($event)">
+                  <option [ngValue]="null" disabled>{{ 'settings.detection.selectCamera' | translate }}</option>
+                  @for (cam of activeCameras; track cam.cameraId) {
+                    <option [ngValue]="cam.cameraId">{{ cam.friendlyName }} · CH{{ cam.channel + 1 }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (zonesLoading) {
+                <div class="empty">{{ 'common.loading' | translate }}</div>
+              } @else if (zonesError && !zonesProfile) {
+                <div class="msg info">{{ 'zones.noProfile' | translate }}</div>
+                <div class="sticky-actions">
+                  <button class="btn primary add-zone" (click)="openZoneEditor()">+ {{ 'zones.addZone' | translate }}</button>
+                </div>
+              } @else if (zonesProfile) {
+                <div class="zone-list-head">
+                  <span class="dirty-hint">{{ 'zones.appliesNew' | translate }}</span>
+                  <button class="btn primary add-zone" (click)="openZoneEditor()">+ {{ 'zones.addZone' | translate }}</button>
+                </div>
+
+                @if (zoneList().length === 0) {
+                  <div class="empty">{{ 'zones.noZones' | translate }}</div>
+                } @else {
+                  <div class="zone-list">
+                    @for (item of zoneList(); track $index) {
+                      <div class="zone-row">
+                        <span class="zone-type-badge" [class.ignore]="item.type === 'ignore'" [class.focus]="item.type === 'focus'">
+                          {{ item.type === 'ignore' ? 'IGNORE' : 'FOCUS' }}
+                        </span>
+                        <span class="zone-name">{{ item.zone.name || ('zones.unnamed' | translate) }}</span>
+                        <span class="zone-area mono">{{ zoneAreaPct(item.zone) }}%</span>
+                        <button class="zone-edit" [title]="'zones.edit' | translate" (click)="openZoneEditor({ list: item.type, index: item.index, zone: item.zone })">✎</button>
+                        <button class="zone-remove" [title]="'zones.remove' | translate" (click)="removeZone(item.type, item.index)">×</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (zonesSaved) {
+                  <div class="msg ok">{{ 'zones.saved' | translate }}</div>
+                }
+                @if (zonesError) {
+                  <div class="msg error">{{ 'zones.saveError' | translate }}</div>
+                }
+              }
+            </div>
+          }
+        }
+
+        @case ('users') {
+          <!-- Users (admin): list + reset password -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.users.title' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.users.subtitle' | translate }}</div>
+            </div>
+
+            @if (usersError) {
+              <div class="msg error">{{ 'settings.users.loadError' | translate }}</div>
+            } @else {
+              <div class="user-list">
+                @for (user of users; track user.userId) {
+                  <div class="user-row">
+                    <app-avatar [id]="'av' + String(user.avatarId).padStart(2, '0')" [size]="36"></app-avatar>
+                    <div class="user-info">
+                      <div class="user-name">
+                        {{ user.username }}
+                        @if (isMe(user)) {
+                          <span class="you-tag">{{ 'settings.users.you' | translate }}</span>
+                        }
+                      </div>
+                      <div class="user-meta mono">
+                        {{ user.hasPassword ? ('settings.users.passwordSet' | translate) : ('settings.users.passwordNotSet' | translate) }}
+                      </div>
+                    </div>
+                    <span class="role-pill" [class.admin]="user.role === 'admin'">
+                      {{ user.role === 'admin' ? 'ADMIN' : ('settings.users.standardRole' | translate) }}
+                    </span>
+                    <button
+                      class="btn ghost danger"
+                      [class.confirm]="resetConfirmFor === user.username"
+                      (click)="requestReset(user.username)"
+                    >
+                      {{ resetConfirmFor === user.username ? ('settings.users.confirmReset' | translate) : ('settings.users.resetPassword' | translate) }}
+                    </button>
+                  </div>
+                }
+              </div>
+              @if (resetMessage) {
+                <div class="msg" [class.ok]="resetMessage === 'settings.users.resetDone'">
+                  {{ resetMessage | translate }}
+                </div>
+              }
+              <div class="note">{{ 'settings.users.note' | translate }}</div>
+            }
+          </div>
+        }
+
+        @case ('security') {
+          <!-- Security: change password + current session -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.security.password' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.security.passwordSub' | translate }}</div>
+            </div>
+            <div class="form-row">
+              <div class="form-label"><div>{{ 'settings.security.current' | translate }}</div></div>
+              <input class="text-input" type="password" [(ngModel)]="secCurrent" />
+            </div>
+            <div class="form-row">
+              <div class="form-label"><div>{{ 'settings.security.new' | translate }}</div></div>
+              <input class="text-input" type="password" [(ngModel)]="secNew" placeholder="{{ 'login.passwordHint' | translate }}" />
+            </div>
+            <div class="form-row">
+              <div class="form-label"><div>{{ 'settings.security.confirm' | translate }}</div></div>
+              <input class="text-input" type="password" [(ngModel)]="secConfirm" />
+            </div>
+            @if (secMessage) {
+              <div class="msg" [class.ok]="secMessage.kind === 'ok'" [class.error]="secMessage.kind === 'error'">
+                {{ secMessage.text | translate }}
+              </div>
+            }
+            <button class="btn primary" (click)="changePassword()">{{ 'settings.security.updatePassword' | translate }}</button>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.security.sessions' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.security.sessionsSub' | translate }}</div>
+            </div>
+            <div class="session-row">
+              <div class="session-info">
+                <div class="session-device">{{ 'settings.security.currentDevice' | translate }}</div>
+                <div class="session-ua mono">{{ sessionDevice }}</div>
+              </div>
+              <span class="current-tag">{{ 'settings.security.currentSession' | translate }}</span>
+            </div>
+            <div class="note">{{ 'settings.security.sessionsNote' | translate }}</div>
+          </div>
+        }
+
+        @case ('system') {
+          <!-- System (admin): NVR + worker + API -->
+          @if (systemError) {
+            <div class="card"><div class="msg error">{{ 'settings.system.loadError' | translate }}</div></div>
+          } @else if (systemInfo) {
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">{{ 'settings.system.nvr' | translate }}</div>
+                <div class="card-subtitle">{{ 'settings.system.nvrSub' | translate }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.host' | translate }}</div></div>
+                <div class="mono-value mono">{{ systemInfo.nvr.host }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.port' | translate }}</div></div>
+                <div class="mono-value mono">{{ systemInfo.nvr.port }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.username' | translate }}</div></div>
+                <div class="mono-value mono">{{ systemInfo.nvr.username }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.password' | translate }}</div></div>
+                <div class="mono-value mono">{{ passwordLabel() }}</div>
+              </div>
+              <div class="note">{{ 'settings.system.nvrNote' | translate }}</div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">{{ 'settings.system.worker' | translate }}</div>
+                <div class="card-subtitle">{{ 'settings.system.workerSub' | translate }}</div>
+              </div>
+              <div class="worker-row">
+                <span class="dot on"></span>
+                <span class="worker-name">{{ 'settings.system.workerStatus' | translate }}</span>
+              </div>
+              <div class="stat-grid">
+                <div class="stat"><span class="stat-value mono">{{ systemInfo.worker.queued }}</span><span class="stat-label">{{ 'settings.system.queued' | translate }}</span></div>
+                <div class="stat"><span class="stat-value mono">{{ systemInfo.worker.running }}</span><span class="stat-label">{{ 'settings.system.running' | translate }}</span></div>
+                <div class="stat"><span class="stat-value mono">{{ systemInfo.worker.completed }}</span><span class="stat-label">{{ 'settings.system.completed' | translate }}</span></div>
+                <div class="stat"><span class="stat-value mono">{{ systemInfo.worker.failed }}</span><span class="stat-label">{{ 'settings.system.failed' | translate }}</span></div>
+              </div>
+            </div>
+
+            @if (systemStatus) {
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title">{{ 'settings.system.sync' | translate }}</div>
+                  <div class="card-subtitle">{{ 'settings.system.syncSub' | translate }}</div>
+                </div>
+                <div class="stat-grid">
+                  <div class="stat"><span class="stat-value mono">{{ systemStatus.sync.backlog }}</span><span class="stat-label">{{ 'settings.system.backlog' | translate }}</span></div>
+                  <div class="stat"><span class="stat-value mono">{{ systemStatus.sync.totalRecordings }}</span><span class="stat-label">{{ 'settings.system.totalRecordings' | translate }}</span></div>
+                  <div class="stat"><span class="stat-value mono">{{ systemStatus.sync.completedAnalyses }}</span><span class="stat-label">{{ 'settings.system.completedAnalyses' | translate }}</span></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-label"><div>{{ 'settings.system.lastSync' | translate }}</div></div>
+                  <div class="mono-value mono">{{ systemStatus.sync.lastSyncUtc ? formatServerTime(systemStatus.sync.lastSyncUtc) : '—' }}</div>
+                </div>
+              </div>
+            }
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">{{ 'settings.system.api' | translate }}</div>
+                <div class="card-subtitle">{{ 'settings.system.apiSub' | translate }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.apiBase' | translate }}</div></div>
+                <div class="mono-value mono">http://localhost:5000</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.apiVersion' | translate }}</div></div>
+                <div class="mono-value mono">{{ systemInfo.apiVersion }}</div>
+              </div>
+              <div class="form-row">
+                <div class="form-label"><div>{{ 'settings.system.serverTime' | translate }}</div></div>
+                <div class="mono-value mono">{{ formatServerTime(systemInfo.serverTimeUtc) }}</div>
+              </div>
+            </div>
+
+            <!-- S22g: detaily všetkých služieb (api/runner/web) + verzie implementácií -->
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">{{ 'settings.system.services' | translate }}</div>
+                <div class="card-subtitle">{{ 'settings.system.servicesSub' | translate }}</div>
+              </div>
+              @for (svc of systemInfo.services; track svc.name) {
+                <div class="form-row">
+                  <div class="form-label">
+                    <div class="svc-name">
+                      <span class="dot" [class.on]="svc.status === 'active'"></span>
+                      {{ svc.name }}
+                    </div>
+                    <div class="hint">port {{ svc.port }}</div>
+                  </div>
+                  <div class="mono-value mono">
+                    <span class="svc-version">{{ svc.version }}</span>
+                    <span class="svc-status" [class.down]="svc.status !== 'active'">{{ svc.status }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="card"><div class="empty">{{ 'common.loading' | translate }}</div></div>
+          }
+        }
+
+        @case ('identities') {
+          
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">{{ 'settings.identities.title' | translate }}</div>
+              <div class="card-subtitle">{{ 'settings.identities.subtitle' | translate }}</div>
+            </div>
+            <div class="form-row">
+              <div class="form-label"><div>{{ 'settings.identities.name' | translate }}</div></div>
+              <div class="input-group">
+                <input class="input" [(ngModel)]="newIdentityName" [placeholder]="'settings.identities.namePlaceholder' | translate" (keyup.enter)="createIdentity()" />
+                <button class="btn primary" (click)="createIdentity()" [disabled]="!newIdentityName.trim()">
+                  {{ 'settings.identities.add' | translate }}
+                </button>
+              </div>
+            </div>
+            @if (identitiesError) {
+              <div class="msg error">{{ 'settings.identities.loadError' | translate }}</div>
+            } @else if (identities.length === 0) {
+              <div class="empty">{{ 'settings.identities.empty' | translate }}</div>
+            } @else {
+              <div class="identity-list">
+                @for (identity of identities; track identity.identityId) {
+                  <div class="identity-row">
+                    <div class="identity-info">
+                      <div class="identity-name">{{ identity.name }}</div>
+                      <div class="identity-sub">{{ identity.faceCount }} {{ 'settings.identities.faces' | translate }}</div>
+                    </div>
+                    <button class="btn danger" (click)="deleteIdentity(identity)">
+                      {{ 'settings.identities.delete' | translate }}
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

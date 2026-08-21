@@ -1,0 +1,27 @@
+# WatchForge MCP server — Quadlet unit (S9-2)
+
+[Unit]
+Description=WatchForge MCP server (streamable HTTP)
+Wants=network-online.target
+After=network-online.target watchforge-api.service
+
+[Container]
+Image=localhost/watchforge-mcp:latest
+ContainerName=watchforge-mcp
+
+# API base URL — DNS názov API kontajnera v sieti watchforge-net
+Environment=WATCHFORGE_API_URL=http://watchforge-api:8080
+# API token (voliteľné, default prázdny):
+#   Environment=WATCHFORGE_API_TOKEN=...
+Environment=ASPNETCORE_URLS=http://0.0.0.0:18082
+
+PublishPort=18082:18082
+
+Network=watchforge-net.network
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

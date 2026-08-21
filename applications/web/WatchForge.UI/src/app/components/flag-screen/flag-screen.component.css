@@ -1,0 +1,419 @@
+/* Flag screen (S6-7, FR-11 + FR-16) — štýl podľa design handoff flag-screen.jsx.
+   Červené boxy = systémové detekcie (SYSTEM ·), zelené = užívateľské (USER ·).
+   Farby cez --wf-* CSS vars s fallbackmi; témy prídu v S6-8. */
+
+.flag-screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--wf-bg, #faf6ec);
+  color: var(--wf-text, #1a2240);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+  outline: none;
+}
+
+.flag-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--wf-muted, #6b6b6b);
+  font-size: 13px;
+}
+
+/* ---- top bar ---- */
+
+.flag-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--wf-surface, #ffffff);
+  border-bottom: 1px solid var(--wf-border, #d6cbb2);
+  flex-shrink: 0;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.flag-badge {
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  border-radius: 999px;
+  background: var(--wf-chipBg, #e6dec9);
+  color: var(--wf-motion, #e25c2a);
+}
+
+.flag-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--wf-muted, #6b6b6b);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.dot.motion {
+  background: var(--wf-motion, #e25c2a);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Legenda */
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 6px;
+  font-size: 11px;
+  color: var(--wf-text2, #3a4468);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.swatch.system {
+  border: 2px solid var(--wf-motion, #e25c2a);
+}
+
+.swatch.user {
+  border: 2px solid var(--wf-ok, #0f8a4a);
+}
+
+/* Voľba flagu */
+
+.flag-choice {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--wf-chipBg, #e6dec9);
+}
+
+.choice-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--wf-text2, #3a4468);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.choice-btn.on {
+  background: var(--wf-surface, #ffffff);
+  color: var(--wf-brand, #0f8a4a);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Akčné tlačidlá */
+
+.cancel-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wf-text2, #3a4468);
+  border: 1px solid var(--wf-border, #d6cbb2);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: var(--wf-brand, #0f8a4a);
+  color: var(--wf-onBrand, #ffffff);
+  border: none;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.home-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--wf-border, #d6cbb2);
+  background: var(--wf-surface2, #f4efe2);
+  color: var(--wf-text2, #3a4468);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---- stage ---- */
+
+.flag-stage {
+  flex: 1;
+  position: relative;
+  padding: 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flag-canvas {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a2138, #0e1426);
+  border: 1px solid var(--wf-border, #d6cbb2);
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.flag-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.flag-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* ---- boxy ---- */
+
+.system-box,
+.user-box {
+  position: absolute;
+  border-radius: 3px;
+}
+
+.system-box {
+  border: 2px solid var(--wf-motion, #e25c2a);
+  box-shadow: 0 0 22px rgba(226, 92, 42, 0.4);
+  pointer-events: none; /* systémové detekcie sa nedajú ťahať */
+}
+
+.user-box {
+  border: 2px solid var(--wf-ok, #0f8a4a);
+  box-shadow: 0 0 22px rgba(15, 138, 74, 0.4);
+}
+
+.user-box.draft {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.user-box.selected {
+  border-color: #ffffff;
+}
+
+.box-tag {
+  position: absolute;
+  top: -22px;
+  left: -1px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  border-radius: 4px 4px 4px 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.system-tag {
+  background: var(--wf-motion, #e25c2a);
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.user-tag {
+  background: var(--wf-ok, #0f8a4a);
+  color: #ffffff;
+  cursor: default;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Resize handles (USER boxy — design: 4 rohy) */
+
+.handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--wf-surface, #ffffff);
+  border: 2px solid var(--wf-ok, #0f8a4a);
+  cursor: nwse-resize;
+}
+
+.handle[data-corner="tl"] { left: -5px; top: -5px; cursor: nwse-resize; }
+.handle[data-corner="tr"] { right: -5px; top: -5px; cursor: nesw-resize; }
+.handle[data-corner="bl"] { left: -5px; bottom: -5px; cursor: nesw-resize; }
+.handle[data-corner="br"] { right: -5px; bottom: -5px; cursor: nwse-resize; }
+
+/* Label input (text tool) */
+
+.label-input {
+  position: absolute;
+  top: -24px;
+  left: -1px;
+  width: 160px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  border-radius: 4px 4px 4px 0;
+  border: 1px solid var(--wf-ok, #0f8a4a);
+  background: var(--wf-surface, #ffffff);
+  color: var(--wf-text, #1a2240);
+  outline: none;
+}
+
+/* ---- toolbar ---- */
+
+.flag-toolbar {
+  position: absolute;
+  left: 50%;
+  top: 34px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 5;
+}
+
+.tool-btn {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tool-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tool-btn.danger:hover:not(:disabled) {
+  background: rgba(226, 92, 42, 0.35);
+}
+
+.tool-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---- spodné chipy ---- */
+
+.rec-chip {
+  position: absolute;
+  left: 30px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 4;
+}
+
+.date-chip {
+  position: absolute;
+  right: 30px;
+  bottom: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 4;
+}
+
+/* ---- chyby ---- */
+
+.flag-error {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--wf-motion, #e25c2a);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  z-index: 6;
+}

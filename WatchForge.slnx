@@ -1,10 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <Solution>
-  <Project Path="libs/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+  <Project Path="libraries/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
   <Project Path="apps/services/WatchForge.DVRIP.Service/WatchForge.DVRIP.Service.csproj" />
-  <Project Path="libs/WatchForge.DVRIP.Library.Tests/WatchForge.DVRIP.Library.Tests.csproj" />
-  <Project Path="libs/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
+  <Project Path="tests/libraries/WatchForge.DVRIP.Library.Tests/WatchForge.DVRIP.Library.Tests.csproj" />
+  <Project Path="tests/libraries/WatchForge.Testing.FakeNvr/WatchForge.Testing.FakeNvr.csproj" />
+  <Project Path="libraries/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
   <Project Path="apps/services/WatchForge.MotionSentinel.Service/WatchForge.MotionSentinel.Service.csproj" />
-  <Project Path="libs/WatchForge.MotionSentinel.Library.Tests/WatchForge.MotionSentinel.Library.Tests.csproj" />
+  <Project Path="tests/libraries/WatchForge.MotionSentinel.Library.Tests/WatchForge.MotionSentinel.Library.Tests.csproj" />
   <Project Path="apps/services/WatchForge.MotionSentinel.Service.Tests/WatchForge.MotionSentinel.Service.Tests.csproj" />
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/tools/">
+    <Project Path="tests/tools/WatchForge.Mcp.Tests/WatchForge.Mcp.Tests.csproj" />
+  </Folder>
+  <Project Path="applications/server/WatchForge.Api/WatchForge.Api.csproj" />
+  <Project Path="tests/applications/server/WatchForge.Api.Tests/WatchForge.Api.Tests.csproj" />
+  <Project Path="applications/services/WatchForge.Runner/WatchForge.Runner.csproj" />
+  <Project Path="libraries/WatchForge.Contracts.Library/WatchForge.Contracts.Library.csproj" />
+  <Project Path="tests/libraries/WatchForge.Contracts.Library.Tests/WatchForge.Contracts.Library.Tests.csproj" />
+  <Project Path="libraries/WatchForge.Interfaces.Library/WatchForge.Interfaces.Library.csproj" />
+  <Project Path="tests/libraries/WatchForge.Interfaces.Library.Tests/WatchForge.Interfaces.Library.Tests.csproj" />
+  <Project Path="libraries/WatchForge.Processing.Library/WatchForge.Processing.Library.csproj" />
+  <Project Path="tests/libraries/WatchForge.Processing.Library.Tests/WatchForge.Processing.Library.Tests.csproj" />
+  <Project Path="tests/services/WatchForge.Runner.Tests/WatchForge.Runner.Tests.csproj" />
+  <Project Path="applications/tools/WatchForge.Mcp/WatchForge.Mcp.csproj" />
+  <Project Path="applications/tools/WatchForge.FakeNvr.Host/WatchForge.FakeNvr.Host.csproj" />
 </Solution>

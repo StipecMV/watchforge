@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WatchForge — A/B porovnanie detekcie pohybu</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a22; --line:#262c38; --text:#e6e9f0; --muted:#8a93a6;
+    --fb:#3b82f6; --mog2:#ef4444; --knn:#eab308; --tvl1:#22c55e; --manual:#f97316;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+  header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:1.05rem;margin:0;font-weight:600}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600}
+  .btn:hover{border-color:#3b82f6}
+  .btn.primary{background:#2563eb;border-color:#2563eb}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  main{padding:18px;max-width:1200px;margin:0 auto}
+  .stage{position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  video{width:100%;display:block;max-height:70vh}
+  #canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .controls{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
+  .transport{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;background:var(--panel);border-radius:10px;border:1px solid var(--line)}
+  .lg{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
+  .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .badge{font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+  #scrub{width:100%;margin-top:8px}
+  .marquee{font-family:ui-monospace,monospace;font-size:.78rem;color:var(--muted)}
+  .color-dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:4px}
+  .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  .lbl{font-size:.8rem;color:var(--muted)}
+  textarea{width:100%;height:120px;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:8px;font-family:ui-monospace,monospace;font-size:.78rem;padding:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎥 WatchForge — A/B porovnanie detekcie pohybu</h1>
+  <select id="videoSelect" class="btn" style="max-width:340px" onchange="loadVideoFromList(this.value)">
+    <option value="">— vyber video z NVR —</option>
+  </select>
+  <button class="btn" onclick="document.getElementById('jsonInput').click()">Načítať JSON detekcií</button>
+  <button class="btn" onclick="document.getElementById('videoInput').click()">Načítať video</button>
+  <span class="badge" id="status">nič nenačítané</span>
+</header>
+<input type="file" id="jsonInput" accept=".json" style="display:none">
+<input type="file" id="videoInput" accept="video/*" style="display:none">
+
+<main>
+  <div class="stage">
+    <video id="video" controls></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="legend">
+    <div class="lg"><span class="sw" style="background:var(--fb)"></span> Farneback</div>
+    <div class="lg"><span class="sw" style="background:var(--mog2)"></span> MOG2</div>
+    <div class="lg"><span class="sw" style="background:var(--knn)"></span> KNN</div>
+    <div class="lg"><span class="sw" style="background:var(--tvl1)"></span> AbsDiff</div>
+    <div class="lg"><span class="sw" style="background:var(--manual)"></span> Manuálny nález (oranžový)</div>
+  </div>
+
+  <div class="controls">
+    <span class="lbl">Aktívne algoritmy:</span>
+    <label><input type="checkbox" id="chkFarneback" checked> <span class="color-dot" style="background:var(--fb)"></span>Farneback</label>
+    <label><input type="checkbox" id="chkMog2" checked> <span class="color-dot" style="background:var(--mog2)"></span>MOG2</label>
+    <label><input type="checkbox" id="chkKnn" checked> <span class="color-dot" style="background:var(--knn)"></span>KNN</label>
+    <label><input type="checkbox" id="chkAbsDiff" checked> <span class="color-dot" style="background:var(--tvl1)"></span>AbsDiff</label>
+  </div>
+
+  <div class="transport">
+    <button class="btn" id="btnPlay">▶ Prehrať</button>
+    <button class="btn" onclick="prevFrame()">⏮ Priebežný</button>
+    <button class="btn" onclick="nextFrame()">Ďalší ⏭</button>
+    <span class="marquee" id="frameInfo">frame —</span>
+  </div>
+  <input type="range" id="scrub" min="0" max="100" value="0">
+
+  <div class="row" id="labelRow">
+    <span class="lbl">Označenie aktuálneho framu:</span>
+    <button class="btn" onclick="mark('skum')">🔴 Šum (false positive)</button>
+    <button class="btn primary" onclick="mark('nalez')">🟢 Nález (true positive)</button>
+    <button class="btn" onclick="manualDrawToggle()">🟠 Nález — algoritmy nenašli (nakresli)</button>
+    <button class="btn" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <div class="row">
+    <span class="lbl" id="drawHint" style="display:none">Vyber a nakresli oranžový obdĺžnik na plochu videa (tiahni myšou/prstom).</span>
+  </div>
+
+  <textarea id="log" readonly placeholder="Prihlásenie označení ..."></textarea>
+</main>
+
+<script>
+// ── stav ──
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let doc = null;
+let currentFrameIdx = -1;
+let drawing = null;   // {x,y,w,h} počas kreslenia (normalizované)
+let manualBox = null; // {x,y,w,h} uložený pre aktuálny frame
+let drawMode = false;
+let marks = [];       // {ts, frameIdx, type:'skum'|'nalez', algo?, region?, manual?:{x,y,w,h}}
+let videoUrl = null;
+let selectedRegion = null; // {algo, index, box:{x,y,w,h}} — vybraný obdĺžnik kliknutím
+let videosList = [];       // manifest [{name, video, json}]
+let suppression = false;   // potláča timeupdate počas prev/next seeku
+
+const ALGO_COLORS = { farneback:'#3b82f6', mog2:'#ef4444', knn:'#eab308', absdiff:'#22c55e' };
+
+// ── načítanie JSON ──
+document.getElementById('jsonInput').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  doc = JSON.parse(await f.text());
+  document.getElementById('status').textContent = `JSON: ${doc.frames.length} framov, ${doc.algorithms.map(a=>a.name).join('/')}`;
+  document.getElementById('scrub').max = doc.frames.length - 1;
+  resetMarks();
+});
+document.getElementById('videoInput').addEventListener('change', (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  if(videoUrl) URL.revokeObjectURL(videoUrl);
+  videoUrl = URL.createObjectURL(f);
+  video.src = videoUrl;
+  document.getElementById('status').textContent = `video: ${f.name}`;
+});
+
+// ── HTTP auto-load (Tailscale serve): ak je appka servírovaná cez HTTP server,
+//    načíta video.mp4 + detections.json zo rovnakého adresára. Query parametre
+//    ?video=...&json=... prepíšu názvy. Fallback na file input ostáva. ──
+(async function autoLoad(){
+  const qs = new URLSearchParams(location.search);
+  const videoName = qs.get('video') || 'video.mp4';
+  const jsonName  = qs.get('json')  || 'detections.json';
+  const base = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+
+  // video auto-load
+  const v = document.createElement('source');
+  video.src = base + videoName + (videoName.includes('?') ? '' : '?t=' + Date.now());
+  video.addEventListener('error', () => { /* video nemusí byť servírované — file input fallback */ });
+  document.getElementById('status').textContent = 'video auto-load: ' + videoName;
+
+  // JSON auto-load
+  try {
+    const r = await fetch(base + jsonName);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    doc = JSON.parse(await r.text());
+    document.getElementById('status').textContent =
+      `JSON auto-load: ${doc.frames.length} framov, ${doc.algorithms.map(a=>a.name).join('/')} · video: ${videoName}`;
+    document.getElementById('scrub').max = doc.frames.length - 1;
+    resetMarks();
+    if (doc.frames.length > 0) setFrame(0);
+  } catch (e) {
+    document.getElementById('status').textContent = 'JSON auto-load zlyhal (' + e.message + ') — načítaj JSON a video manuálne tlačidlami vyššie.';
+  }
+})();
+loadVideosList();
+
+// ── zoznam videí ──
+async function loadVideosList(){
+  try {
+    const base = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+    const r = await fetch(base + 'videos.json');
+    if(!r.ok) return;
+    videosList = await r.json();
+    const sel = document.getElementById('videoSelect');
+    sel.innerHTML = '<option value="">— vyber video z NVR —</option>';
+    for(const v of videosList){
+      const o = document.createElement('option');
+      o.value = v.video;
+      o.textContent = v.name;
+      sel.appendChild(o);
+    }
+  } catch(e){ /* bez manifestu — file input fallback ostáva */ }
+}
+
+async function loadVideoFromList(videoName){
+  if(!videoName) return;
+  const base = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+  const item = videosList.find(v => v.video === videoName);
+  const jsonName = item?.json || videoName.replace(/\.mp4$/,'.json');
+  document.getElementById('status').textContent = 'načítavam ' + item?.name || videoName;
+  try {
+    if(videoUrl) URL.revokeObjectURL(videoUrl);
+    videoUrl = base + videoName;
+    video.src = videoUrl + '?t=' + Date.now();
+    const r = await fetch(base + jsonName);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    doc = JSON.parse(await r.text());
+    document.getElementById('status').textContent = `${item?.name || videoName}: ${doc.frames.length} framov, ${doc.algorithms.map(a=>a.name).join('/')}`;
+    document.getElementById('scrub').max = doc.frames.length - 1;
+    resetMarks();
+    if(doc.frames.length > 0) seekToFrame(0);
+  } catch(e){
+    document.getElementById('status').textContent = 'Načítanie zlyhalo (' + e.message + ')';
+  }
+}
+
+// ── prehrávanie / seek ──
+document.getElementById('btnPlay').addEventListener('click', () => {
+  if(video.paused) video.play(); else video.pause();
+});
+video.addEventListener('timeupdate', () => {
+  if(!doc || suppression) return;
+  // najdi najbližší fram podľa času
+  const ms = video.currentTime * 1000;
+  let best = 0;
+  for(let i=0;i<doc.frames.length;i++){ if(doc.frames[i].timestampMs <= ms) best=i; else break; }
+  if(best !== currentFrameIdx) setFrame(best, /*syncVideo=*/false);
+});
+document.getElementById('scrub').addEventListener('input', (e) => {
+  const f = parseInt(e.target.value);
+  if(doc && doc.frames[f]){ seekToFrame(f); }
+});
+
+/** Nastaví frame a posunie video na jeho čas (ak je video načítané). */
+function seekToFrame(idx){
+  if(!doc || !doc.frames[idx]) return;
+  setFrame(idx, false);
+  if(video.currentSrc && doc.frames[idx]){
+    suppression = true;
+    video.currentTime = doc.frames[idx].timestampMs / 1000;
+    setTimeout(()=>{ suppression = false; }, 300);
+  }
+}
+
+function setFrame(idx, syncVideo = true){
+  currentFrameIdx = idx;
+  selectedRegion = null; // nový frame → zruš výber obdĺžnika
+  document.getElementById('scrub').value = idx;
+  const f = doc.frames[idx];
+  if(!f) return;
+  document.getElementById('frameInfo').textContent = `frame ${idx}/${doc.frames.length-1} · t=${(f.timestampMs/1000).toFixed(1)}s`;
+  const existing = marks.find(m => m.frameIdx === idx && !m.algo); // frame-level mark (nie region)
+  manualBox = existing?.manual || null;
+  drawRegions(f);
+  if(syncVideo && video.currentSrc && doc.frames[idx]){
+    suppression = true;
+    video.currentTime = doc.frames[idx].timestampMs / 1000;
+    setTimeout(()=>{ suppression = false; }, 300);
+  }
+}
+function prevFrame(){ if(doc) seekToFrame(Math.max(0,currentFrameIdx-1)); }
+function nextFrame(){ if(doc) seekToFrame(Math.min(doc.frames.length-1,currentFrameIdx+1)); }
+
+// ── kreslenie ──
+let _hitBoxes = []; // [{algo, index, x,y,w,h}] pre hit-test kliku — znormalizované
+
+function drawRegions(f){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w; canvas.height = h;
+  ctx.clearRect(0,0,w,h);
+  const active = {
+    farneback: document.getElementById('chkFarneback').checked,
+    mog2: document.getElementById('chkMog2').checked,
+    knn: document.getElementById('chkKnn').checked,
+    absdiff: document.getElementById('chkAbsDiff').checked,
+  };
+  _hitBoxes = [];
+  for(const [key, regions] of Object.entries(f.regions||{})){
+    if(!active[key]) continue;
+    ctx.strokeStyle = ALGO_COLORS[key]||'#fff';
+    ctx.lineWidth = 2;
+    for(let i=0;i<regions.length;i++){
+      const r = regions[i];
+      const x=r.x*w, y=r.y*h, rw=r.w*w, rh=r.h*h;
+      ctx.strokeRect(x,y,rw,rh);
+      _hitBoxes.push({algo:key, index:i, x:r.x, y:r.y, w:r.w, h:r.h});
+    }
+  }
+  // zvýrazni vybraný obdĺžnik (žltý kontúr + label algoritmu)
+  if(selectedRegion){
+    const bx = selectedRegion.box;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+    ctx.strokeRect(bx.x*w, bx.y*h, bx.w*w, bx.h*h);
+    ctx.fillStyle = ALGO_COLORS[selectedRegion.algo]||'#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(selectedRegion.algo.toUpperCase(), bx.x*w+2, Math.max(12, bx.y*h-2));
+  }
+  // manuálny box (prerušovaný oranžový)
+  if(manualBox){
+    ctx.strokeStyle = '#f97316'; ctx.setLineDash([6,4]); ctx.lineWidth=2.5;
+    ctx.strokeRect(manualBox.x*w, manualBox.y*h, manualBox.w*w, manualBox.h*h);
+    ctx.setLineDash([]);
+  }
+}
+
+// Klik na obdĺžnik — vyberie konkrétny (pre označenie šumu/nálezu len jeho)
+canvas.addEventListener('click', (e) => {
+  if(drawMode || !doc || !doc.frames[currentFrameIdx]) return;
+  const rect = canvas.getBoundingClientRect();
+  const nx = (e.clientX - rect.left) / rect.width;
+  const ny = (e.clientY - rect.top) / rect.height;
+  // reverse order — najmenši obdĺžnik ktorý obsahuje bod vyhráva
+  let best = null, bestArea = Infinity;
+  for(const b of _hitBoxes){
+    if(nx >= b.x && nx <= b.x + b.w && ny >= b.y && ny <= b.y + b.h){
+      const area = b.w * b.h;
+      if(area < bestArea){ best = b; bestArea = area; }
+    }
+  }
+  selectedRegion = best ? { algo:best.algo, index:best.index, box:{x:best.x,y:best.y,w:best.w,h:best.h} } : null;
+  drawRegions(doc.frames[currentFrameIdx]);
+  const info = document.getElementById('frameInfo');
+  if(selectedRegion){
+    info.textContent = `frame ${currentFrameIdx}/${doc.frames.length-1} · t=${(doc.frames[currentFrameIdx].timestampMs/1000).toFixed(1)}s · vybraný: ${selectedRegion.algo} #${selectedRegion.index}`;
+  } else {
+    info.textContent = `frame ${currentFrameIdx}/${doc.frames.length-1} · t=${(doc.frames[currentFrameIdx].timestampMs/1000).toFixed(1)}s · klik mimo obdĺžnikov (zrušený výber)`;
+  }
+});
+
+// ── označenie ──
+function mark(type){
+  if(currentFrameIdx < 0 || !doc) return alert('Najprv načítaj JSON');
+  const f = doc.frames[currentFrameIdx];
+  // ak je vybraný konkrétny obdĺžnik — označ LEN ten (region-level)
+  if(selectedRegion){
+    marks = marks.filter(m => !(m.frameIdx === currentFrameIdx && m.algo === selectedRegion.algo && m.index === selectedRegion.index));
+    marks.push({ ts:f.timestampMs, frameIdx:currentFrameIdx, type,
+                 algo:selectedRegion.algo, region:selectedRegion.box });
+    log(`${type.toUpperCase()} @ t=${(f.timestampMs/1000).toFixed(1)}s → ${selectedRegion.algo} #${selectedRegion.index} ${type==='skum'?'(šum)':'(nález)'}`);
+    return;
+  }
+  // inak frame-level označenie
+  marks = marks.filter(m => m.frameIdx !== currentFrameIdx);
+  marks.push({ ts:f.timestampMs, frameIdx:currentFrameIdx, type, manual: manualBox || null });
+  log(`${type.toUpperCase()} @ t=${(f.timestampMs/1000).toFixed(1)}s (celý frame) ${manualBox?'+oranžový box':''}`);
+}
+
+// ── kreslenie oranžového obdĺžnika ──
+function manualDrawToggle(){
+  drawMode = !drawMode;
+  document.getElementById('drawHint').style.display = drawMode ? 'block':'none';
+}
+canvas.style.pointerEvents = 'auto';
+canvas.addEventListener('mousedown', onDrawStart);
+canvas.addEventListener('touchstart', (e)=>{ if(e.touches.length===1){ onDrawStartFrom(e.touches[0].clientX,e.touches[0].clientY);} e.preventDefault(); },{passive:false});
+canvas.addEventListener('mousemove', onDrawMove);
+canvas.addEventListener('touchmove', (e)=>{ if(e.touches.length===1) onDrawMoveFrom(e.touches[0].clientX,e.touches[0].clientY); },{passive:false});
+window.addEventListener('mouseup', onDrawEnd);
+
+function onDrawStart(e){ onDrawStartFrom(e.clientX,e.clientY); }
+function onDrawStartFrom(cx,cy){
+  if(!drawMode) return;
+  const rect=canvas.getBoundingClientRect();
+  drawing={x:(cx-rect.left)/rect.width,y:(cy-rect.top)/rect.height,w:0,h:0};
+}
+function onDrawMove(e){ if(e.buttons) onDrawMoveFrom(e.clientX,e.clientY); }
+function onDrawMoveFrom(cx,cy){
+  if(!drawing) return;
+  const rect=canvas.getBoundingClientRect();
+  const x=(cx-rect.left)/rect.width, y=(cy-rect.top)/rect.height;
+  drawing.w=x-drawing.x; drawing.h=y-drawing.y;
+  redrawLive();
+}
+function onDrawEnd(){
+  if(!drawing) return;
+  // normalizovať záporné
+  manualBox = { x:Math.min(drawing.x,drawing.x+drawing.w), y:Math.min(drawing.y,drawing.y+drawing.h),
+                w:Math.abs(drawing.w), h:Math.abs(drawing.h) };
+  drawing=null; drawMode=false;
+  document.getElementById('drawHint').style.display='none';
+  if(doc && doc.frames[currentFrameIdx]) drawRegions(doc.frames[currentFrameIdx]);
+}
+function redrawLive(){
+  const w=canvas.clientWidth,h=canvas.clientHeight; canvas.width=w;canvas.height=h; ctx.clearRect(0,0,w,h);
+  if(doc&&doc.frames[currentFrameIdx]) drawRegions(doc.frames[currentFrameIdx]);
+  if(drawing){ ctx.strokeStyle='#f97316';ctx.setLineDash([6,4]);ctx.lineWidth=2.5;
+    ctx.strokeRect(drawing.x*w,drawing.y*h,drawing.w*w,drawing.h*h); ctx.setLineDash([]); }
+}
+
+function resetMarks(){ marks=[]; log('Marks reset'); }
+
+// ── CSV ──
+function exportCSV(){
+  let csv = 'frameIdx,timestampMs,oznacenie,algo,regionX,regionY,regionW,regionH,manualX,manualY,manualW,manualH,manual\n';
+  for(const m of marks.sort((a,b)=>a.frameIdx-b.frameIdx)){
+    const r = m.region;
+    csv += `${m.frameIdx},${m.ts},${m.type},${m.algo||''},${r?.x||''},${r?.y||''},${r?.w||''},${r?.h||''},${m.manual?.x||''},${m.manual?.y||''},${m.manual?.w||''},${m.manual?.h||''},${m.manual ? 'yes' : ''}\n`;
+  }
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='watchforge-ab-labels.csv'; a.click();
+}
+
+function log(msg){
+  const ta=document.getElementById('log');
+  ta.value = msg + '\n' + ta.value;
+}
+</script>
+</body>
+</html>

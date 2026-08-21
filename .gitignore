@@ -15,3 +15,8 @@ global.json
 **/.angular/
 
 TestResults/*.html
+
+# WatchForge secrets — nikdy do gitu
+deploy/secrets/
+**/secrets/*.yaml
+**/secrets/*.yml

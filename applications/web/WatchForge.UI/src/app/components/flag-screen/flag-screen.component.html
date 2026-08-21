@@ -1,0 +1,189 @@
+
+@if (!detection) {
+  <div class="flag-empty">{{ 'flag.noEvent' | translate }}</div>
+} @else {
+  <div class="flag-screen" tabindex="0" (keydown)="onStageKeyDown($event)">
+    <!-- Top bar (dashboard pattern) -->
+    <header class="flag-topbar">
+      <span class="wordmark">WatchForge</span>
+      <span class="flag-badge">{{ 'flag.badge' | translate }}</span>
+      <span class="flag-event mono">
+        <span class="dot motion"></span>
+        {{ cameraName }}@if (eventTime) { · {{ eventTime }} }
+      </span>
+      <span class="spacer"></span>
+
+      <!-- Legenda -->
+      <div class="legend">
+        <span class="legend-item">
+          <span class="swatch system"></span>{{ 'flag.legendSystem' | translate }}
+        </span>
+        <span class="legend-item">
+          <span class="swatch user"></span>{{ 'flag.legendUser' | translate }}
+        </span>
+      </div>
+
+      
+      <div class="flag-choice">
+        <button
+          class="choice-btn"
+          [class.on]="flagChoice === 'flagged'"
+          (click)="setFlagChoice('flagged')"
+        >🚩 {{ 'flag.flagLabel' | translate }}</button>
+        <button
+          class="choice-btn"
+          [class.on]="flagChoice === 'false_positive'"
+          (click)="setFlagChoice('false_positive')"
+        >✕ {{ 'flag.falsePositive' | translate }}</button>
+      </div>
+
+      <button class="cancel-btn" (click)="onCancel()">{{ 'common.cancel' | translate }}</button>
+      <button class="save-btn" (click)="save()" [disabled]="saving">
+        ✓ {{ 'flag.saveFlag' | translate }}
+      </button>
+      <button class="home-btn" (click)="goHome()" [title]="'flag.home' | translate">⌂</button>
+    </header>
+
+    <!-- Stage -->
+    <div class="flag-stage">
+      <div
+        class="flag-canvas"
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp($event)"
+      >
+        <!-- Syntetická scéna (flag-screen.jsx) alebo fotka framu -->
+        <svg class="flag-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="flagSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a2440"></stop>
+              <stop offset="1" stop-color="#0c1326"></stop>
+            </linearGradient>
+          </defs>
+          <rect width="1600" height="900" fill="url(#flagSky)"></rect>
+          <path d="M0 620 L320 620 L320 460 L660 460 L660 540 L1040 540 L1040 410 L1280 410 L1280 580 L1600 580 L1600 900 L0 900 Z" fill="#0a0f1f"></path>
+          <rect x="380" y="510" width="32" height="42" fill="#ffb43a" opacity="0.5"></rect>
+          <rect x="460" y="510" width="32" height="42" fill="#ffb43a" opacity="0.35"></rect>
+          <rect x="1080" y="450" width="32" height="42" fill="#ffb43a" opacity="0.65"></rect>
+        </svg>
+        @if (frameUrl) {
+          <img class="flag-frame" [src]="frameUrl" alt="" />
+        }
+
+        <!-- Systémové detekcie (červené, read-only) -->
+        @for (box of systemBoxes; track $index) {
+          <div
+            class="system-box"
+            [style]="boxStyle({ regionX: box.x, regionY: box.y, regionW: box.width, regionH: box.height })"
+          >
+            <span class="box-tag system-tag">{{ 'flag.system' | translate }} · {{ systemLabel() }}</span>
+          </div>
+        }
+
+        <!-- Živý náhľad počas kreslenia -->
+        @if (draftStyle()) {
+          <div class="user-box draft" [style]="draftStyle()"></div>
+        }
+
+        <!-- Užívateľské anotácie (zelené, resize handles) -->
+        @for (a of annotations; track a.key) {
+          <div
+            class="user-box"
+            [class.selected]="selectedKey === a.key"
+            data-kind="user-box"
+            [attr.data-id]="a.key"
+            [style]="boxStyle(a)"
+          >
+            @if (editingLabelId === a.key) {
+              <input
+                class="label-input"
+                [value]="a.label"
+                (pointerdown)="$event.stopPropagation()"
+                (input)="setLabel(a.key, $any($event.target).value)"
+                (keydown)="$event.stopPropagation()"
+                (keydown.enter)="commitLabel(a.key)"
+                (blur)="commitLabel(a.key)"
+              />
+            } @else {
+              <span
+                class="box-tag user-tag"
+                (pointerdown)="$event.stopPropagation()"
+                (dblclick)="startLabelEdit(a.key)"
+              >
+                {{ 'flag.user' | translate }} · {{ a.label || ('flag.noLabel' | translate) }}
+              </span>
+            }
+            @if (selectedKey === a.key) {
+              <span class="handle" data-kind="handle" [attr.data-id]="a.key" data-corner="tl"></span>
+              <span class="handle" data-kind="handle" [attr.data-id]="a.key" data-corner="tr"></span>
+              <span class="handle" data-kind="handle" [attr.data-id]="a.key" data-corner="bl"></span>
+              <span class="handle" data-kind="handle" [attr.data-id]="a.key" data-corner="br"></span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flag-toolbar">
+        <button
+          class="tool-btn"
+          [class.active]="tool === 'select'"
+          (click)="setTool('select')"
+          [title]="'flag.toolSelect' | translate"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3l16 8-7 2-2 7-7-17z"></path></svg>
+        </button>
+        <button
+          class="tool-btn"
+          [class.active]="tool === 'rect'"
+          (click)="setTool('rect')"
+          [title]="'flag.toolRect' | translate"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="6" width="16" height="12" rx="1"></rect></svg>
+        </button>
+        <button
+          class="tool-btn"
+          [class.active]="tool === 'text'"
+          (click)="setTool('text')"
+          [title]="'flag.toolText' | translate"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M12 5v14M9 19h6"></path></svg>
+        </button>
+
+        <span class="tool-sep"></span>
+
+        <button class="tool-btn" [disabled]="!canUndo" (click)="undo()" [title]="'flag.undo' | translate">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"></path></svg>
+        </button>
+        <button class="tool-btn" [disabled]="!canRedo" (click)="redo()" [title]="'flag.redo' | translate">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3"></path></svg>
+        </button>
+
+        <span class="tool-sep"></span>
+
+        <button
+          class="tool-btn danger"
+          [disabled]="annotations.length === 0"
+          (click)="clearDrawings()"
+          [title]="'flag.clearDrawings' | translate"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
+        </button>
+      </div>
+
+      <!-- Spodné chipy -->
+      <div class="rec-chip">
+        <span class="dot motion"></span>
+        {{ 'flag.rec' | translate }} · {{ cameraName || ('sidebar.camera' | translate) }}
+      </div>
+      <div class="date-chip mono">{{ eventDate }}</div>
+
+      @if (saveError) {
+        <div class="flag-error">{{ 'flag.saveError' | translate }}</div>
+      }
+      @if (loadError) {
+        <div class="flag-error">{{ 'flag.loadError' | translate }}</div>
+      }
+    </div>
+  </div>
+}

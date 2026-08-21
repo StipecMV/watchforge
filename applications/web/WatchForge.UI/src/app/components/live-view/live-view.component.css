@@ -1,0 +1,337 @@
+/* S22j: :host s obmedzenou výškou — grid-1 (jedna kamera) musí vyplniť
+   celú voľnú plochu main-content, inak video zostane malé ukotvené hore. */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.live-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+}
+
+.live-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 4px;
+}
+
+.live-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.grid-switcher {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-2, #eef0f4);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.grid-switcher button {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-secondary, #555);
+}
+
+.grid-switcher button.active {
+  background: var(--accent, #2563eb);
+  color: #fff;
+}
+
+.live-grid {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+
+/* S22j: view 8 = 4×2 dlaždice, ktoré VYPLNIA celú výšku (2 riadky 1fr).
+   Predtým: aspect-ratio 16/9 → pri 4 stĺpcoch malé dlaždice + prázdny
+   pás dole. Teraz bunky = 1/4 šírky × 1/2 výšky, obraz cover (orez minimálny). */
+.grid-8 {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.grid-8 .live-cell {
+  aspect-ratio: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.grid-8 .live-img {
+  object-fit: cover;
+}
+
+/* Režim 1: bunka vyplní CELÚ voľnú plochu (výška aj šírka) — obraz sa
+   prispôsobí 16:9 letterboxom a vycentruje; bez scrollu na akomkoľvek
+   monitore. S22j: grid-template-rows:1fr — bez neho riadok = auto (výška
+   obsahu) a bunka zostala malá, ukotvená hore. */
+.grid-1 .live-cell {
+  height: 100%;
+  width: 100%;
+  aspect-ratio: auto;
+  justify-self: center;
+  align-self: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* S22j: view 1 — obraz CONTAIN (žiadne orezanie — časová pečiatka kamery
+   a okraje záberu MUSIA byť viditeľné); bunka 16:9 vycentrovaná, pásy
+   hore/dole sú minimálne (~30 px) a neškodné. Cover by odrezal pečiatku. */
+.grid-1 .live-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* S22j: view 1 — label len malý prekryv (nie tmavý pás) */
+.grid-1 .live-label {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  left: 12px;
+  bottom: 12px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.live-cell {
+  position: relative;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+}
+
+.live-cell.live-cell-selected {
+  outline: 2px solid var(--wf-brand, #0f8a4a);
+}
+
+/* S22o: viewport pre zoom — obsahuje živý obraz, ktorý sa vie zväčšiť (scale/pan).
+   overflow skryje zväčšený obraz mimo okienka; na view 8 je to len passthrough. */
+.live-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  will-change: transform;
+  /* S22o: pri zoome sa transformuje (translate+scale); origin = stred obrazu */
+  transform-origin: center center;
+}
+
+/* View 1: zoom/pan aktívny — obraz vyplní viewport (obsah), nie riadok */
+.grid-1 .live-viewport {
+  overflow: hidden;
+}
+.grid-1 .live-img.zoomable {
+  object-fit: contain;
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+}
+
+.live-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.live-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0a;
+}
+
+.live-loading .spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: live-spin 0.8s linear infinite;
+}
+
+/* S22o: zoom ovládanie (view 1) — tlačidlá +/− a reset, v spodnej časti */
+.zoom-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 8px;
+  padding: 4px 6px;
+  z-index: 5;
+}
+
+.zoom-btn,
+.zoom-reset-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-reset-btn {
+  width: auto;
+  padding: 0 8px;
+  font-size: 0.8rem;
+}
+
+.zoom-btn:hover,
+.zoom-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.zoom-val {
+  color: #fff;
+  font-size: 0.78rem;
+  min-width: 44px;
+  text-align: center;
+}
+
+/* Zoom reset tlačidlo v rohu obrazu (pri zoome > 1) */
+.zoom-reset {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 5;
+}
+
+@keyframes live-spin {
+  to { transform: rotate(360deg); }
+}
+
+.live-cell-empty {
+  background: var(--surface-2, #e8eaf0);
+  opacity: 0.5;
+}
+
+/* ─── RESPONZÍVNE: mobil (< 860px) ─── */
+@media (max-width: 860px) {
+  .live-topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .live-title {
+    font-size: 0.85rem;
+  }
+
+  .grid-switcher button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Mriežka: 2 stĺpce na mobile (8 kamier = 2×4, 4 riadky) */
+  .live-grid.grid-8 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+  }
+
+  .live-grid.grid-8 .live-cell {
+    aspect-ratio: auto;
+    min-height: 0;
+  }
+
+  .live-grid.grid-8 .live-img {
+    object-fit: cover;
+  }
+
+  .live-grid.grid-1 .live-cell {
+    aspect-ratio: auto;
+    height: 100%;
+    width: 100%;
+  }
+
+  .live-cell {
+    aspect-ratio: 16 / 10;
+  }
+
+  /* S22j: view 1 — label len malý prekryv, nie tmavý pás */
+  .live-grid.grid-1 .live-label {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    left: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .live-label {
+    font-size: 0.68rem;
+    left: 6px;
+    bottom: 6px;
+    padding: 2px 6px;
+  }
+}

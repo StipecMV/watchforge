@@ -1,0 +1,330 @@
+/* Focus zone editor (S6-6) — štýl podľa design handoff focus-zone-editor.jsx.
+   Farby cez --wf-* CSS vars s fallbackmi (Light+Green paleta); témy S6-8. */
+
+.zone-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--wf-bg, #faf6ec);
+  color: var(--wf-text, #1a2240);
+}
+
+/* ---- top bar ---- */
+
+.zed-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--wf-surface, #faf6ec);
+  border: 1px solid var(--wf-border, #d6cbb2);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.zed-badge {
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  border-radius: 999px;
+  background: var(--wf-chipBg, #e6dec9);
+  color: var(--wf-brand, #0f8a4a);
+}
+
+.zed-context {
+  font-size: 12px;
+  color: var(--wf-muted, #6b6b6b);
+}
+
+.zed-spacer {
+  flex: 1;
+}
+
+.zed-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.zed-btn.ghost {
+  background: transparent;
+  color: var(--wf-text2, #3a4468);
+  border-color: var(--wf-border, #d6cbb2);
+}
+
+.zed-btn.primary {
+  background: var(--wf-brand, #0f8a4a);
+  color: var(--wf-onBrand, #faf6ec);
+}
+
+.zed-btn.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.zed-ico {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---- layout ---- */
+
+.zed-body {
+  flex: 1;
+  display: flex;
+  gap: 14px;
+  min-height: 0;
+}
+
+.zed-canvas-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+}
+
+/* ---- canvas ---- */
+
+.zone-canvas {
+  position: relative;
+  flex: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--wf-border, #d6cbb2);
+  background: linear-gradient(135deg, #1a2138, #0e1426);
+}
+
+.zed-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  outline: none;
+  touch-action: none;
+}
+
+/* ---- plávajúci toolbar ---- */
+
+.zed-toolbar {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 5;
+}
+
+.zt-btn {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zt-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.zt-btn.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.zt-ico {
+  width: 16px;
+  height: 16px;
+}
+
+.zt-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---- pravý rail ---- */
+
+.zed-rail {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.zed-card {
+  background: var(--wf-surface, #faf6ec);
+  border: 1px solid var(--wf-border, #d6cbb2);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zed-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: var(--wf-muted, #6b6b6b);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.zed-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.zed-label {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.zed-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--wf-text, #1a2240);
+  background: var(--wf-surface2, #efe8d8);
+  border: 1px solid var(--wf-border, #d6cbb2);
+  outline: none;
+}
+
+/* výber kamery (design: riadok na kameru) */
+
+.zed-cameras {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zed-cam {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--wf-text, #1a2240);
+}
+
+.zed-cam.active {
+  background: var(--wf-chipBg, #e6dec9);
+  border-color: var(--wf-brand, #0f8a4a);
+}
+
+.zed-cam-name {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.zed-cam-id {
+  font-size: 10px;
+  color: var(--wf-muted, #6b6b6b);
+}
+
+/* typ IGNORE / FOCUS */
+
+.zed-type-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.zt-type {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--wf-border, #d6cbb2);
+  background: var(--wf-surface2, #efe8d8);
+  color: var(--wf-text2, #3a4468);
+}
+
+.zt-type.ignore.active {
+  background: var(--wf-motion, #e25c2a);
+  border-color: var(--wf-motion, #e25c2a);
+  color: var(--wf-onMotion, #fff);
+}
+
+.zt-type.focus.active {
+  background: var(--wf-brand, #0f8a4a);
+  border-color: var(--wf-brand, #0f8a4a);
+  color: var(--wf-onBrand, #faf6ec);
+}
+
+.type-hint {
+  font-size: 10.5px;
+  color: var(--wf-muted, #6b6b6b);
+  line-height: 1.4;
+}
+
+/* štatistiky tvaru */
+
+.zed-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--wf-text2, #3a4468);
+}
+
+.zed-stat {
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: var(--wf-surface2, #efe8d8);
+  border: 1px solid var(--wf-border, #d6cbb2);
+}
+
+.zed-stat-label {
+  font-size: 9px;
+  color: var(--wf-muted, #6b6b6b);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.zed-stat-value {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}

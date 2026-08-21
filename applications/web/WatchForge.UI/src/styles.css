@@ -1,0 +1,112 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Témy (S6-8): Light+Green / Dark+Purple / Contrast+Orange ────────────
+ * Komponenty používajú var(--wf-*) s fallbackmi — definície nižšie sú
+ * autoritatívne. data-theme na <html> (ThemeService, prefers-color-scheme).
+ */
+:root,
+:root[data-theme='light-green'] {
+  color-scheme: light;
+  --wf-bg: #f4f1e8;
+  --wf-surface: #faf6ec;
+  --wf-surface2: #efe9d8;
+  --wf-text: #1a2240;
+  --wf-text2: #3a4260;
+  --wf-muted: #8c8676;
+  --wf-border: #d6cbb2;
+  --wf-brand: #0f8a4a;
+  --wf-chip: #e6dec9;
+  --wf-on: #ffffff;
+  --wf-ok: #0f8a4a;
+  --wf-danger: #c0392b;
+  --wf-motion: #e54620;
+  --wf-motion2: #f5a623;
+  --wf-shadow: rgba(26, 34, 64, 0.14);
+}
+
+:root[data-theme='dark-purple'] {
+  color-scheme: dark;
+  --wf-bg: #141a2e;
+  --wf-surface: #1a2240;
+  --wf-surface2: #222c52;
+  --wf-text: #e6e2f4;
+  --wf-text2: #b8b3d6;
+  --wf-muted: #7d86ad;
+  --wf-border: #46527a;
+  --wf-brand: #8b5cf6;
+  --wf-chip: #2a3460;
+  --wf-on: #ffffff;
+  --wf-ok: #34d399;
+  --wf-danger: #f87171;
+  --wf-motion: #f59e0b;
+  --wf-motion2: #f87171;
+  --wf-shadow: rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='contrast-orange'] {
+  color-scheme: light;
+  --wf-bg: #ffffff;
+  --wf-surface: #ffffff;
+  --wf-surface2: #f0f0f0;
+  --wf-text: #111111;
+  --wf-text2: #222222;
+  --wf-muted: #444444;
+  --wf-border: #000000;
+  --wf-brand: #e54620;
+  --wf-chip: #ffffff;
+  --wf-on: #ffffff;
+  --wf-ok: #006400;
+  --wf-danger: #b30000;
+  --wf-motion: #e54620;
+  --wf-motion2: #b36b00;
+  --wf-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* prefers-color-scheme: dark → Dark+Purple, ak user ešte nevybral explicitne
+ * (ThemeService inicializuje z tohto media query; atribút data-theme to potvrdí). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --wf-bg: #141a2e;
+    --wf-surface: #1a2240;
+    --wf-surface2: #222c52;
+    --wf-text: #e6e2f4;
+    --wf-text2: #b8b3d6;
+    --wf-muted: #7d86ad;
+    --wf-border: #46527a;
+    --wf-brand: #8b5cf6;
+    --wf-chip: #2a3460;
+    --wf-on: #ffffff;
+    --wf-ok: #34d399;
+    --wf-danger: #f87171;
+    --wf-motion: #f59e0b;
+    --wf-motion2: #f87171;
+    --wf-shadow: rgba(0, 0, 0, 0.45);
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--wf-bg);
+  color: var(--wf-text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--wf-surface2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--wf-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--wf-brand);
+}

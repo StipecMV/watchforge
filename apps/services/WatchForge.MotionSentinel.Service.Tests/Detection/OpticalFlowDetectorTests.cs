@@ -1,5 +1,5 @@
 using OpenCvSharp;
-using WatchForge.MotionSentinel.Service.Detection;
+using WatchForge.MotionSentinel.Library.Detection;
 
 namespace WatchForge.MotionSentinel.Service.Tests.Detection;
 

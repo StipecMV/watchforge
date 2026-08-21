@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>WatchForge.MotionSentinel.Library</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WatchForge.Interfaces.Library\WatchForge.Interfaces.Library.csproj" />
+  </ItemGroup>
+
+  <!-- Face assets (S8-3 + S19): LBP cascade (klasická CV) + YuNet detekcia + SFace
+       rozpoznávanie (ONNX, ML — FR-05 povolené). Súbory musia byť v build outpute
+       (CopyToOutputDirectory) aj v kontajneri. -->
+  <ItemGroup>
+    <Content Include="Detection/Assets/lbpcascade_frontalface.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Detection/Assets/face_detection_yunet_2023mar.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Detection/Assets/face_recognition_sface_2021dec.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" />
+    <PackageReference Include="OpenCvSharp4" />
+    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64" />
+    <!-- CUDA (S8-1): len keď nie je CPU-only build (kontajner) — CUDA build .so
+         vyžaduje libcuda/libnpp runtime, ktoré v kontajneri nie sú; CPU fallback
+         je plnohodnotný (S8-1 nález: M2200 Maxwell aj tak nepodporuje sm_100). -->
+    <PackageReference Include="OpenCvSharp4.Cuda" Condition="'$(WatchForgeCpuOnly)' != 'true'" />
+    <PackageReference Include="OpenCvSharp4.Cuda.runtime.linux-x64" Condition="'$(WatchForgeCpuOnly)' != 'true'" />
+  </ItemGroup>
+
+  <!-- CUDA detektor sa kompiluje len v plnom builde (testy/GPU stroj),
+       v CPU-only builde (kontajner) sa vylúči — Runner ho neregistruje. -->
+  <ItemGroup Condition="'$(WatchForgeCpuOnly)' == 'true'">
+    <Compile Remove="Detection/CudaOpticalFlowDetector.cs" />
+  </ItemGroup>
+
+</Project>

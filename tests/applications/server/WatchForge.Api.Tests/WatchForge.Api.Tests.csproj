@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <RootNamespace>WatchForge.Api.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../applications/server/WatchForge.Api/WatchForge.Api.csproj" />
+    <ProjectReference Include="../../../../applications/services/WatchForge.Runner/WatchForge.Runner.csproj" />
+    <ProjectReference Include="../../../../libraries/WatchForge.Processing.Library/WatchForge.Processing.Library.csproj" />
+    <ProjectReference Include="../../../../libraries/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj" />
+    <ProjectReference Include="../../../../libraries/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj" />
+    <ProjectReference Include="../../../../tests/libraries/WatchForge.Testing.FakeNvr/WatchForge.Testing.FakeNvr.csproj" />
+  </ItemGroup>
+
+</Project>

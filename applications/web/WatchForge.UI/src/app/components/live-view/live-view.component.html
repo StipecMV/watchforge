@@ -1,0 +1,73 @@
+<div class="live-view">
+  <div class="live-topbar">
+    <div class="live-title">
+      <span class="live-dot"></span>
+      <span>{{ 'live.live' | translate }}</span>
+    </div>
+    <div class="grid-switcher">
+      <button
+        [class.active]="gridMode === 1"
+        (click)="setGrid(1)"
+        [title]="'live.camera1' | translate"
+      >1</button>
+      <button
+        [class.active]="gridMode === 8"
+        (click)="setGrid(8)"
+        [title]="'live.cameras8' | translate"
+      >8</button>
+    </div>
+  </div>
+
+  <div
+    class="live-grid"
+    [class.grid-1]="gridMode === 1"
+    [class.grid-8]="gridMode === 8"
+  >
+    @for (slot of gridSlots; track slot) {
+      @if (visibleCameras[slot]; as cam) {
+        <div
+          class="live-cell"
+          (click)="onCellClick(cam)"
+          (dblclick)="onCellDblClick(cam)"
+          [class.live-cell-selected]="gridMode === 1"
+          [title]="'live.clickToFocus' | translate"
+        >
+          <div
+            class="live-viewport"
+            (wheel)="onWheel($event)"
+            (touchstart)="onTouchStart($event)"
+            (touchmove)="onTouchMove($event)"
+          >
+            <img
+              [src]="frameUrls.get(cam.cameraId)"
+              [alt]="cam.friendlyName"
+              class="live-img"
+              [class.zoomable]="zoomActive"
+              [style.transform]="zoomActive ? 'translate(' + panX * 100 + '%, ' + panY * 100 + '%) scale(' + zoom + ')' : null"
+              (load)="onFrameLoaded(cam.cameraId)"
+              (error)="onFrameError($event)"
+            />
+          </div>
+          <div class="live-label">{{ cam.friendlyName }}</div>
+          @if (zoomActive && zoom > 1) {
+            <button class="zoom-reset" (click)="resetZoom()" [title]="'live.zoomReset' | translate">⟲</button>
+          }
+          <div class="live-loading" *ngIf="!loaded.has(cam.cameraId)">
+            <span class="spinner"></span>
+          </div>
+        </div>
+      } @else {
+        <div class="live-cell live-cell-empty"></div>
+      }
+    }
+  </div>
+
+  @if (zoomActive) {
+    <div class="zoom-controls">
+      <button class="zoom-btn" (click)="zoomBy(1 / 1.2)" [title]="'live.zoomOut' | translate">−</button>
+      <span class="zoom-val mono">{{ (zoom * 100).toFixed(0) }}%</span>
+      <button class="zoom-btn" (click)="zoomBy(1.2)" [title]="'live.zoomIn' | translate">+</button>
+      <button class="zoom-reset-btn" (click)="resetZoom()" [title]="'live.zoomReset' | translate">⟲ 100%</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,110 @@
+# WatchForge — deployment compose (S9-1)
+# 4 kontajnery (rootless Podman), shared volumes, secrets cez Podman secrets.
+# Spustenie:
+#   podman secret create nvr-auth deploy/secrets/nvr-auth.yaml
+#   podman-compose up -d            (alebo: podman compose up -d)
+#
+# Porty:
+#   runner (internal HTTP)  8081
+#   api (REST)              8080
+#   web (nginx)             80
+#   mcp (MCP HTTP)          18082
+#
+# Zdieľané volumes:
+#   wf-data   — SQLite DB (runner + api)
+#   wf-media  — temp downloady, clips (runner + api)
+#
+# Secrets:
+#   nvr-auth  — YAML s NVR prihlasovacími údajmi (username/password),
+#               mountovaný do runner ako /run/secrets/nvr-auth;
+#               entrypoint ho namapuje na WATCHFORGE_NVR_USERNAME/_PASSWORD.
+#               DB stĺpec NVRS.password_secret_env musí ukazovať na
+#               WATCHFORGE_NVR_PASSWORD (seed SQL, S9-4).
+
+name: watchforge
+
+services:
+  runner:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.runner
+    container_name: watchforge-runner
+    restart: unless-stopped
+    volumes:
+      - wf-data:/data
+      - wf-media:/media
+    secrets:
+      - nvr-auth
+    environment:
+      WATCHFORGE__RUNNER__DBPATH: /data/watchforge.db
+      WATCHFORGE__RUNNER__DOWNLOAD__TEMPDIR: /media/tmp
+      WATCHFORGE__RUNNER__CLIPS__CLIPSDIR: /media/clips
+      WATCHFORGE__RUNNER__HTTPPORT: "8081"
+    expose:
+      - "8081"
+    networks:
+      - watchforge-net
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: watchforge-api
+    restart: unless-stopped
+    depends_on:
+      - runner
+    volumes:
+      - wf-data:/data
+      - wf-media:/media
+    environment:
+      WATCHFORGE__API__DBPATH: /data/watchforge.db
+      WATCHFORGE__API__CORS__ALLOWEDORIGINS__0: http://localhost
+      WATCHFORGE__API__CORS__ALLOWEDORIGINS__1: http://localhost:8080
+      WATCHFORGE__API__APITOKEN: ${WATCHFORGE_API_TOKEN:-}
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    networks:
+      - watchforge-net
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.ui
+    container_name: watchforge-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    networks:
+      - watchforge-net
+
+  mcp:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.mcp
+    container_name: watchforge-mcp
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      WATCHFORGE_API_URL: http://api:8080
+      WATCHFORGE_API_TOKEN: ${WATCHFORGE_API_TOKEN:-}
+      ASPNETCORE_URLS: http://0.0.0.0:18082
+    ports:
+      - "18082:18082"
+    networks:
+      - watchforge-net
+
+volumes:
+  wf-data:
+  wf-media:
+
+secrets:
+  nvr-auth:
+    file: ./secrets/nvr-auth.yaml
+
+networks:
+  watchforge-net:
+    driver: bridge

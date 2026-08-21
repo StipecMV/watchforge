@@ -1,0 +1,15 @@
+# WatchForge SQLite backup — denný timer (S9-3)
+# Spúšťa watchforge-db-backup.service každý deň o 04:00 (UTC).
+# Po vynechanom behu (spánok/vypnutie) sa spustí hneď po nabootovaní
+# (Persistent=true).
+
+[Unit]
+Description=WatchForge SQLite backup (denne)
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

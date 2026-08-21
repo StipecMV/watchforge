@@ -1,0 +1,42 @@
+<div class="player-shell">
+  @if (!clipUrl) {
+    <div class="empty-state">
+      <div class="empty-icon">▶</div>
+      <p>{{ 'player.noClip' | translate }}</p>
+    </div>
+  } @else {
+    <div class="video-frame">
+      <video
+        #videoEl
+        [src]="clipUrl"
+        playsinline
+        (loadedmetadata)="onMetadata()"
+        (timeupdate)="onTimeUpdate()"
+        (play)="onPlay()"
+        (pause)="onPause()"
+        (ended)="onEnded()"
+      ></video>
+      <canvas #overlayCanvas class="overlay"></canvas>
+
+      @if (eventLabel) {
+        <div class="hud">
+          <span class="hud-event">{{ eventLabel }}</span>
+          <span class="hud-time">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="transport">
+      <button
+        class="play-btn"
+        (click)="togglePlay()"
+        [attr.aria-label]="isPlaying ? ('player.pause' | translate) : ('player.play' | translate)"
+      >
+        {{ isPlaying ? '❚❚' : '▶' }}
+      </button>
+      <span class="time-current">{{ formatTime(currentTime) }}</span>
+      <span class="time-sep">/</span>
+      <span class="time-total">{{ formatTime(duration) }}</span>
+    </div>
+  }
+</div>

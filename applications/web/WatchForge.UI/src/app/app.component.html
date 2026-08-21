@@ -1,0 +1,150 @@
+@if (restoring) {
+  <div class="boot-splash">
+    <div class="boot-spinner"></div>
+    <span>{{ 'common.loading' | translate }}</span>
+  </div>
+} @else {
+  <div class="app-shell">
+    <!-- Mobil: hamburger → drawer sidebar -->
+    <div
+      class="drawer-overlay"
+      [class.open]="mobileSidebarOpen"
+      (click)="mobileSidebarOpen = false"
+    ></div>
+    <div class="sidebar-wrap" [class.open]="mobileSidebarOpen">
+      <app-sidebar
+        [cameras]="cameras"
+        [selectedCameraId]="selectedCamera?.cameraId ?? null"
+        [isAdmin]="isAdmin"
+        [analysesEnabled]="analysesEnabled"
+        (cameraSelected)="onCameraSelected($event)"
+        (liveClick)="openLive()"
+        (analysesClick)="openDashboard()"
+        (adminLoginClick)="view = 'login'"
+        (logoutClick)="logout()"
+        (settingsClick)="openSettings()"
+      ></app-sidebar>
+    </div>
+
+    <main class="main-content">
+      <!-- Mobil top bar: hamburger + názov + analýzy -->
+      <div class="mobile-topbar">
+        <button class="hamburger" (click)="mobileSidebarOpen = !mobileSidebarOpen" [title]="'sidebar.cameras' | translate">
+          ☰
+        </button>
+        <span class="mobile-brand">Watch<b>Forge</b></span>
+        <button class="mobile-live-btn" (click)="openLive()">
+          <span class="live-dot"></span>
+          <span>{{ 'live.live' | translate }}</span>
+        </button>
+      </div>
+
+      <div *ngIf="loadError" class="error-banner">
+        ⚠️ {{ 'app.connectError' | translate }}
+        <button (click)="loadCameras()">{{ 'common.retry' | translate }}</button>
+      </div>
+
+      <!-- Verejné štatistiky analyz + synchronizácie — vidí každý -->
+      @if (stats && analysesEnabled) {
+        <div class="stats-bar">
+          <span class="stats-item" title="Worker služba — bežiace analýzy">
+            <span class="stats-dot running"></span>
+            {{ 'app.statsRunning' | translate }}: <b>{{ stats.running }}</b>
+          </span>
+          <span class="stats-item" title="Worker služba — v poradovníku">
+            <span class="stats-dot queued"></span>
+            {{ 'app.statsQueued' | translate }}: <b>{{ stats.queued }}</b>
+          </span>
+          <span class="stats-item" title="Worker služba — hotové analýzy">
+            <span class="stats-dot done"></span>
+            {{ 'app.statsCompleted' | translate }}: <b>{{ stats.completed }}</b>
+          </span>
+          @if (stats.failed > 0) {
+            <span class="stats-item stats-failed" title="Worker služba — zlyhané analýzy">
+              <span class="stats-dot failed"></span>
+              {{ 'app.statsFailed' | translate }}: <b>{{ stats.failed }}</b>
+            </span>
+          }
+          <span class="stats-item stats-sync" title="Synchronizácia — čakajúce záznamy">
+            <span class="stats-dot sync"></span>
+            {{ 'app.statsBacklog' | translate }}: <b>{{ stats.backlog }}</b>
+          </span>
+          <span class="stats-item stats-sync" title="Synchronizácia — celkovo záznamov">
+            {{ 'app.statsRecordings' | translate }}: <b>{{ stats.totalRecordings }}</b>
+          </span>
+          @if (stats.lastSyncUtc) {
+            <span class="stats-item stats-sync" title="Synchronizácia — posledný sync">
+              {{ 'app.statsLastSync' | translate }}: <b>{{ formatSyncTime(stats.lastSyncUtc) }}</b>
+            </span>
+          }
+        </div>
+      }
+
+      @switch (view) {
+        @case ('login') {
+          <app-login
+            (loggedIn)="onAdminLoggedIn()"
+            (cancel)="view = 'live'"
+          />
+        }
+        @case ('settings') {
+          @if (isAdmin) {
+            <app-settings
+              [cameras]="cameras"
+            ></app-settings>
+          } @else {
+            <app-login
+              (loggedIn)="onAdminLoggedIn()"
+              (cancel)="view = 'live'"
+            />
+          }
+        }
+        @case ('flag') {
+          <app-flag-screen
+            [detection]="flagEvent?.detection ?? null"
+            [cameraName]="cameraNameOf(flagEvent)"
+            [eventTime]="flagEvent ? formatFlagTime(flagEvent) : ''"
+            [eventDate]="eventDateOf(flagEvent)"
+            (saved)="closeFlagScreen()"
+            (cancel)="closeFlagScreen()"
+            (home)="closeFlagScreen()"
+          ></app-flag-screen>
+        }
+        @case ('live') {
+          <app-live-view
+            [cameras]="cameras"
+            [focusCameraId]="selectedCamera?.cameraId ?? null"
+          ></app-live-view>
+        }
+        @default {
+          <app-dashboard
+            [camera]="selectedCamera"
+            [cameras]="cameras"
+            (cameraChange)="onCameraSelected($event)"
+            (flagClick)="openFlagScreen($event)"
+          ></app-dashboard>
+        }
+      }
+    </main>
+
+    <!-- Mobil bottom nav: Live / Analýzy / Nastavenia (admin-only) -->
+    <nav class="mobile-bottombar">
+      <button [class.active]="view === 'live'" (click)="view === 'live' ? closeLive() : openLive()">
+        <span class="bn-icon">📷</span>
+        <span>{{ 'live.live' | translate }}</span>
+      </button>
+      @if (analysesEnabled) {
+        <button [class.active]="view === 'dashboard'" (click)="openDashboard()">
+          <span class="bn-icon">🔍</span>
+          <span>{{ 'app.analyses' | translate }}</span>
+        </button>
+      }
+      @if (isAdmin) {
+        <button [class.active]="view === 'settings'" (click)="openSettings()">
+          <span class="bn-icon">⚙️</span>
+          <span>{{ 'sidebar.settings' | translate }}</span>
+        </button>
+      }
+    </nav>
+  </div>
+}

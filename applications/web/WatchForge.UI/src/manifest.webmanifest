@@ -1,0 +1,24 @@
+{
+  "name": "WatchForge",
+  "short_name": "WatchForge",
+  "description": "Kamerový monitorovací systém — živý obraz, analýzy a detekcie z NVR.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0f8a4a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+# WatchForge SQLite backup — one-shot service (S9-3)
+# Spúšťa sa z watchforge-db-backup.timer (denne o 04:00).
+# Volá backup-db.py: VACUUM INTO + WAL checkpoint + rotácia (14 dní).
+# DB je v zdieľanom volume watchforge-data (rovnaký ako Runner/API kontajnery).
+#
+# Inštalácia: skopíruj do ~/.config/containers/systemd/ a spusti:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now watchforge-db-backup.timer
+#
+# POZOR: ExecStart musí ukazovať na backup-db.py nasadený na hoste
+# (napr. /etc/watchforge/scripts/backup-db.py) a na reálnu cestu DB
+# vo volume. Pre rootless Podman je volume v:
+#   ~/.local/share/containers/storage/volumes/watchforge-data/_data/watchforge.db
+# Uprav cesty podľa deploymentu!
+
+[Unit]
+Description=WatchForge SQLite backup (VACUUM INTO + WAL checkpoint)
+# Záloha beží na hoste, nie v kontajneri — potrebuje prístup k volume.
+RequiresMountsFor=%t/containers
+
+[Service]
+Type=oneshot
+# UPRAV podľa deploymentu (príklad pre rootless Podman default volume):
+ExecStart=/usr/bin/python3 /etc/watchforge/scripts/backup-db.py /home/hp-camera-hub/.local/share/containers/storage/volumes/watchforge-data/_data/watchforge.db /home/hp-camera-hub/.local/share/containers/storage/volumes/watchforge-data/_data/backups 14
+
+[Install]
+WantedBy=default.target

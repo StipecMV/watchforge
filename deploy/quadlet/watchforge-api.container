@@ -1,0 +1,34 @@
+# WatchForge API — Quadlet unit (S9-2)
+# Zdieľa volume s Runnerom (SQLite DB + media).
+
+[Unit]
+Description=WatchForge API (REST + session auth)
+Wants=network-online.target
+After=network-online.target watchforge-runner.service
+
+[Container]
+Image=localhost/watchforge-api:latest
+ContainerName=watchforge-api
+
+Volume=watchforge-data:/data
+Volume=watchforge-media:/media
+
+Environment=WATCHFORGE__API__DBPATH=/data/watchforge.db
+Environment=WATCHFORGE__API__CORS__ALLOWEDORIGINS__0=http://localhost
+Environment=WATCHFORGE__API__CORS__ALLOWEDORIGINS__1=http://localhost:8080
+Environment=ASPNETCORE_URLS=http://0.0.0.0:8080
+
+# API token pre agenta/MCP (voliteľné, default prázdny):
+#   Environment=WATCHFORGE_API_TOKEN=...
+# (Dockerfile.api ho nepredáva automaticky — nastav podľa potreby)
+
+PublishPort=8080:8080
+
+Network=watchforge-net.network
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

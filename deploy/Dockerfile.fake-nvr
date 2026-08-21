@@ -1,0 +1,28 @@
+# WatchForge fake NVR (S9-4 E2E) — emuluje Movols NVR (DVRIP) bez hardvéru
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Packages.props ./
+COPY WatchForge.slnx ./
+COPY tests/libraries/WatchForge.Testing.FakeNvr/WatchForge.Testing.FakeNvr.csproj tests/libraries/WatchForge.Testing.FakeNvr/
+COPY libraries/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj libraries/WatchForge.DVRIP.Library/
+COPY applications/tools/WatchForge.FakeNvr.Host/WatchForge.FakeNvr.Host.csproj applications/tools/WatchForge.FakeNvr.Host/
+RUN dotnet restore applications/tools/WatchForge.FakeNvr.Host/WatchForge.FakeNvr.Host.csproj -r linux-x64
+
+COPY tests/libraries/WatchForge.Testing.FakeNvr/ tests/libraries/WatchForge.Testing.FakeNvr/
+COPY libraries/ libraries/
+COPY applications/tools/WatchForge.FakeNvr.Host/ applications/tools/WatchForge.FakeNvr.Host/
+RUN dotnet publish applications/tools/WatchForge.FakeNvr.Host/WatchForge.FakeNvr.Host.csproj \
+    -c Release -r linux-x64 --self-contained false -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish ./
+
+ENV WF_FAKE_NVR_PORT=34567 \
+    WF_FAKE_NVR_USERNAME=admin \
+    WF_FAKE_NVR_PASSWORD=secret \
+    DOTNET_EnableDiagnostics=0
+
+EXPOSE 34567
+ENTRYPOINT ["dotnet", "WatchForge.FakeNvr.Host.dll"]

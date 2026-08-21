@@ -1,0 +1,242 @@
+.sidebar {
+  width: 264px;
+  min-width: 264px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--wf-surface, #faf6ec);
+  border-right: 1px solid var(--wf-border, #d6cbb2);
+  transition: width 0.15s ease;
+}
+
+.sidebar.collapsed {
+  width: 44px;
+  min-width: 44px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--wf-border, #d6cbb2);
+}
+
+/* S19: Live view tlačidlo */
+.live-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 20px);
+  margin: 10px;
+  margin-bottom: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent, #2563eb);
+  background: transparent;
+  color: var(--accent, #2563eb);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.live-btn:hover {
+  background: var(--accent, #2563eb);
+  color: #fff;
+}
+
+/* Analýzy button pod Live view (S22g) — rovnaký štýl, odlišná ikona */
+.analyses-sidebar-btn {
+  margin-top: 2px;
+}
+
+.analyses-ico {
+  font-size: 13px;
+}
+
+/* Admin prihlásenie/odhlásenie */
+.admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 20px);
+  margin: 6px 10px;
+  padding: 7px 12px;
+  border: 1px solid var(--border, #2a2e38);
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.admin-btn.admin-settings {
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+  font-weight: 600;
+}
+
+.admin-btn.admin-settings:hover {
+  background: var(--accent, #2563eb);
+  color: #fff;
+}
+
+.admin-btn:hover {
+  opacity: 1;
+  border-color: var(--accent, #2563eb);
+}
+
+.admin-ico {
+  font-size: 0.85rem;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.sidebar-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--wf-muted, #8c8676);
+}
+
+.toggle-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--wf-muted, #8c8676);
+  cursor: pointer;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+.toggle-btn:hover {
+  background: var(--wf-surface2, #e6dec9);
+  color: var(--wf-text, #1a2240);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.camera-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  color: var(--wf-text, #1a2240);
+}
+
+.camera-item:hover {
+  background: var(--wf-surface2, #e6dec9);
+}
+
+.camera-item.active {
+  background: var(--wf-surface2, #e6dec9);
+  border-color: var(--wf-brand, #0f8a4a);
+}
+
+.camera-item.offline {
+  opacity: 0.55;
+}
+
+.camera-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-muted, #8c8676);
+  flex-shrink: 0;
+}
+
+.camera-dot.on {
+  background: var(--wf-ok, #0a6f3a);
+  box-shadow: 0 0 0 2px rgba(10, 111, 58, 0.15);
+}
+
+.camera-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.camera-channel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--wf-muted, #8c8676);
+}
+
+.empty-state {
+  padding: 16px 10px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--wf-muted, #8c8676);
+}
+
+/* S6-8: prepínač tém — tri guličky (Light+Green / Dark+Purple / Contrast+Orange) */
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--wf-border, #d6cbb2);
+  margin-top: auto;
+}
+
+.theme-label {
+  font-size: 13px;
+}
+
+.theme-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--wf-border, #d6cbb2);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.theme-dot:hover {
+  transform: scale(1.15);
+}
+
+.theme-dot.active {
+  box-shadow: 0 0 0 2px var(--wf-brand, #0f8a4a);
+  border-color: var(--wf-brand, #0f8a4a);
+}
+
+.theme-dot[data-theme-id='light-green'] {
+  background: linear-gradient(135deg, #faf6ec 50%, #0f8a4a 50%);
+}
+
+.theme-dot[data-theme-id='dark-purple'] {
+  background: linear-gradient(135deg, #1a2240 50%, #8b5cf6 50%);
+}
+
+.theme-dot[data-theme-id='contrast-orange'] {
+  background: linear-gradient(135deg, #ffffff 50%, #e54620 50%);
+}

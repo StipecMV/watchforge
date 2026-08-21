@@ -1,0 +1,35 @@
+# WatchForge API (kontajner 2 — REST + session auth)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Packages.props ./
+COPY WatchForge.slnx ./
+COPY libraries/WatchForge.Interfaces.Library/WatchForge.Interfaces.Library.csproj libraries/WatchForge.Interfaces.Library/
+COPY libraries/WatchForge.Processing.Library/WatchForge.Processing.Library.csproj libraries/WatchForge.Processing.Library/
+COPY libraries/WatchForge.Contracts.Library/WatchForge.Contracts.Library.csproj libraries/WatchForge.Contracts.Library/
+COPY libraries/WatchForge.DVRIP.Library/WatchForge.DVRIP.Library.csproj libraries/WatchForge.DVRIP.Library/
+COPY libraries/WatchForge.MotionSentinel.Library/WatchForge.MotionSentinel.Library.csproj libraries/WatchForge.MotionSentinel.Library/
+COPY applications/server/WatchForge.Api/WatchForge.Api.csproj applications/server/WatchForge.Api/
+RUN dotnet restore applications/server/WatchForge.Api/WatchForge.Api.csproj
+
+COPY libraries/ libraries/
+COPY applications/server/WatchForge.Api/ applications/server/WatchForge.Api/
+RUN dotnet publish applications/server/WatchForge.Api/WatchForge.Api.csproj \
+    -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/publish ./
+
+# Zdieľané volume: databáza (s Runnerom) + clips (streamovanie GET /clips/{id})
+VOLUME ["/data", "/media"]
+ENV WATCHFORGE__API__DBPATH=/data/watchforge.db \
+    ASPNETCORE_URLS=http://0.0.0.0:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_EnableDiagnostics=0
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "WatchForge.Api.dll"]

@@ -1,0 +1,84 @@
+# WatchForge — E2E compose variant (S9-4)
+# Spustenie: deploy/scripts/e2e.sh (alebo manuálne):
+#   podman-compose -f deploy/compose.e2e.yaml up --build
+#
+# Rozdiely oproti produkčnému compose.yaml:
+#   - fake-nvr kontajner (DVRIP emulácia) namiesto reálneho NVR
+#   - seed volume: /seed/e2e-seed.db je inicializačná DB (NVRS→fake-nvr,
+#     CAMERAS, USERS) — skopíruje sa na /data/watchforge.db pri štarte
+#   - web/mcp vynechané (E2E testuje API + Runner tok)
+#
+# Tok: sync (backlog) → POST /api/v1/requests (14:00–16:00) → Analyze job
+#      → ClipExtract → GET /clips/{id} (video + fotka s obdĺžnikom)
+
+name: watchforge-e2e
+
+services:
+  fake-nvr:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.fake-nvr
+    container_name: wf-e2e-fake-nvr
+    environment:
+      WF_FAKE_NVR_PORT: "34567"
+      WF_FAKE_NVR_USERNAME: admin
+      WF_FAKE_NVR_PASSWORD: secret
+      WF_FAKE_NVR_FILENAME: "[Ch0]_2026-04-05_15.00.00-15.15.mkv"
+      WF_FAKE_NVR_BEGIN: "2026-04-05T15:00:00Z"
+      WF_FAKE_NVR_END: "2026-04-05T15:15:00Z"
+      WF_FAKE_NVR_VIDEO: /seed/motion.mp4
+    volumes:
+      - wf-e2e-seed:/seed
+    networks:
+      - watchforge-e2e-net
+
+  runner:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.runner
+    container_name: wf-e2e-runner
+    depends_on:
+      - fake-nvr
+    volumes:
+      - wf-e2e-data:/data
+      - wf-e2e-media:/media
+      - wf-e2e-seed:/seed
+    environment:
+      WATCHFORGE__RUNNER__DBPATH: /data/watchforge.db
+      WATCHFORGE__RUNNER__DOWNLOAD__TEMPDIR: /media/tmp
+      WATCHFORGE__RUNNER__CLIPS__CLIPSDIR: /media/clips
+      WATCHFORGE__RUNNER__HTTPPORT: "8081"
+      WATCHFORGE_NVR_PASSWORD: secret
+    expose:
+      - "8081"
+    networks:
+      - watchforge-e2e-net
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: wf-e2e-api
+    depends_on:
+      - runner
+    volumes:
+      - wf-e2e-data:/data
+      - wf-e2e-media:/media
+    environment:
+      WATCHFORGE__API__DBPATH: /data/watchforge.db
+      WATCHFORGE__API__CORS__ALLOWEDORIGINS__0: http://localhost
+      WATCHFORGE__API__APITOKEN: e2e-token
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    networks:
+      - watchforge-e2e-net
+
+volumes:
+  wf-e2e-data:
+  wf-e2e-media:
+  wf-e2e-seed:
+
+networks:
+  watchforge-e2e-net:
+    driver: bridge

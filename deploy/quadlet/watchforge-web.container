@@ -1,0 +1,21 @@
+# WatchForge Web UI — Quadlet unit (S9-2, nginx + Angular build)
+
+[Unit]
+Description=WatchForge Web UI (nginx)
+Wants=network-online.target
+After=network-online.target watchforge-api.service
+
+[Container]
+Image=localhost/watchforge-ui:latest
+ContainerName=watchforge-web
+
+PublishPort=80:80
+
+Network=watchforge-net.network
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

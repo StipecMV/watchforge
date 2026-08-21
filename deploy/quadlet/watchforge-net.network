@@ -1,0 +1,8 @@
+# WatchForge Quadlet sieť (S9-2) — bridge sieť pre 4 kontajnery
+
+[Unit]
+Description=WatchForge bridge network
+
+[Network]
+NetworkName=watchforge-net
+Driver=bridge

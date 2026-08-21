@@ -1,0 +1,23 @@
+# WatchForge MCP server (kontajner 4 — streamable HTTP, mapuje REST API)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Packages.props ./
+COPY WatchForge.slnx ./
+COPY applications/tools/WatchForge.Mcp/WatchForge.Mcp.csproj applications/tools/WatchForge.Mcp/
+RUN dotnet restore applications/tools/WatchForge.Mcp/WatchForge.Mcp.csproj
+
+COPY applications/tools/WatchForge.Mcp/ applications/tools/WatchForge.Mcp/
+RUN dotnet publish applications/tools/WatchForge.Mcp/WatchForge.Mcp.csproj \
+    -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish ./
+
+ENV WATCHFORGE_API_URL=http://api:8080 \
+    ASPNETCORE_URLS=http://0.0.0.0:18082 \
+    DOTNET_EnableDiagnostics=0
+
+EXPOSE 18082
+ENTRYPOINT ["dotnet", "WatchForge.Mcp.dll"]

@@ -1,0 +1,108 @@
+<div class="login-screen">
+  <div class="login-card">
+    <div class="login-card-head">
+      <span class="wordmark">WatchForge</span>
+      <button type="button" class="close-btn" (click)="cancel.emit()" title="←">✕</button>
+    </div>
+
+    @if (mode === 'signin') {
+      <div class="card-head">
+        <h1>{{ 'login.title' | translate }}</h1>
+        <p class="subtitle">{{ 'login.subtitle' | translate }}</p>
+      </div>
+
+      <form [formGroup]="signinForm" (ngSubmit)="onSignIn()" novalidate>
+        <label class="field">
+          <span class="field-label">{{ 'login.username' | translate }}</span>
+          <input
+            formControlName="username"
+            type="text"
+            autocomplete="username"
+            spellcheck="false"
+          />
+        </label>
+
+        <label class="field">
+          <span class="field-label field-label-row">
+            <span>{{ 'login.password' | translate }}</span>
+            <button type="button" class="link-btn" (click)="showForgot()">
+              {{ 'login.forgot' | translate }}
+            </button>
+          </span>
+          <span class="password-wrap">
+            <input
+              formControlName="password"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="eye-btn"
+              (click)="togglePassword()"
+              [attr.aria-label]="(showPassword ? 'login.hidePassword' : 'login.showPassword') | translate"
+            >{{ showPassword ? '🙈' : '👁️' }}</button>
+          </span>
+        </label>
+
+        @if (errorKey) {
+          <div class="form-error" role="alert">{{ 'login.' + errorKey | translate }}</div>
+        }
+
+        <button type="submit" class="primary-cta" [disabled]="busy">
+          {{ busy ? ('common.loading' | translate) : ('login.signIn' | translate) }}
+        </button>
+      </form>
+    }
+
+    @if (mode === 'setup') {
+      <div class="card-head">
+        <h1>{{ 'login.setupTitle' | translate }}</h1>
+        <p class="subtitle">{{ 'login.setupSubtitle' | translate }}</p>
+      </div>
+
+      <form [formGroup]="setupForm" (ngSubmit)="onSetPassword()" novalidate>
+        <div class="setup-user">{{ setupUsername }}</div>
+
+        <label class="field">
+          <span class="field-label">{{ 'login.newPassword' | translate }}</span>
+          <input
+            formControlName="newPassword"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+          />
+          <span class="field-hint">{{ 'login.passwordHint' | translate }}</span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">{{ 'login.confirmPassword' | translate }}</span>
+          <input
+            formControlName="confirmPassword"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+          />
+        </label>
+
+        @if (errorKey) {
+          <div class="form-error" role="alert">{{ 'login.' + errorKey | translate }}</div>
+        }
+
+        <button type="submit" class="primary-cta" [disabled]="busy">
+          {{ busy ? ('common.loading' | translate) : ('login.setPassword' | translate) }}
+        </button>
+      </form>
+    }
+
+    @if (mode === 'forgot') {
+      <div class="card-head">
+        <h1>{{ 'login.forgotTitle' | translate }}</h1>
+        <p class="subtitle forgot-info">{{ 'login.forgotInfo' | translate }}</p>
+      </div>
+
+      <button type="button" class="primary-cta" (click)="backToSignIn()">
+        {{ 'login.backToSignIn' | translate }}
+      </button>
+    }
+  </div>
+
+  <div class="login-footer">{{ 'login.footer' | translate }}</div>
+</div>

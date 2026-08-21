@@ -1,0 +1,71 @@
+<div class="sidebar" [class.collapsed]="collapsed">
+  <div class="sidebar-header">
+    <span *ngIf="!collapsed" class="sidebar-title">{{ 'sidebar.cameras' | translate }}</span>
+    <button class="toggle-btn" (click)="toggleSidebar()" [title]="collapsed ? ('sidebar.expand' | translate) : ('sidebar.collapse' | translate)">
+      {{ collapsed ? '▶' : '◀' }}
+    </button>
+  </div>
+
+  <!-- S19: Live view prepínač (1/8 kamier) + Analýzy pod ním (konzistentne laptop/mobil) -->
+  <div class="sidebar-content" *ngIf="!collapsed">
+    <button class="live-btn" (click)="liveClick.emit()">
+      <span class="live-dot"></span>
+      <span>{{ 'live.live' | translate }}</span>
+    </button>
+    @if (analysesEnabled) {
+      <button class="live-btn analyses-sidebar-btn" (click)="analysesClick.emit()">
+        <span class="analyses-ico">🔍</span>
+        <span>{{ 'app.analyses' | translate }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Admin: Nastavenia + prihlásenie/odhlásenie (settings je admin-only) -->
+  <div class="sidebar-content" *ngIf="!collapsed">
+    @if (isAdmin) {
+      <button class="admin-btn admin-settings" (click)="settingsClick.emit()">
+        <span class="admin-ico">⚙️</span>
+        <span>{{ 'sidebar.settings' | translate }}</span>
+      </button>
+      <button class="admin-btn" (click)="logoutClick.emit()">
+        <span class="admin-ico">🔒</span>
+        <span>{{ 'sidebar.logout' | translate }}</span>
+      </button>
+    } @else {
+      <button class="admin-btn" (click)="adminLoginClick.emit()">
+        <span class="admin-ico">🔐</span>
+        <span>{{ 'sidebar.adminLogin' | translate }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="sidebar-content" *ngIf="!collapsed">
+    <div
+      *ngFor="let camera of visibleCameras"
+      class="camera-item"
+      [class.active]="isActive(camera)"
+      [class.offline]="!camera.isActive"
+      (click)="selectCamera(camera)"
+    >
+      <span class="camera-dot" [class.on]="camera.isActive"></span>
+      <span class="camera-name">{{ camera.friendlyName || ('sidebar.camera' | translate) }}</span>
+      <span class="camera-channel">CH{{ camera.channel + 1 }}</span>
+    </div>
+    <div *ngIf="cameras.length === 0" class="empty-state">
+      {{ 'sidebar.noCameras' | translate }}
+    </div>
+  </div>
+
+  <!-- S6-8: prepínač tém (Light+Green / Dark+Purple / Contrast+Orange) -->
+  <div class="theme-switcher" *ngIf="!collapsed">
+    <span class="theme-label">🎨</span>
+    <button
+      *ngFor="let t of themeIds"
+      class="theme-dot"
+      [class.active]="theme() === t"
+      [attr.data-theme-id]="t"
+      [title]="t"
+      (click)="setTheme(t)"
+    ></button>
+  </div>
+</div>
